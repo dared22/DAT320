@@ -1,0 +1,471 @@
+---
+title: "CA2"
+author: "Pavel"
+date: "2025-10-09"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+setwd("/Users/pasha/Desktop/pashatheboss2/DAT320/CA2")
+my_data <- read.csv("london_air_data.csv")
+head(my_data)
+colnames(my_data)
+
+```
+
+```{r pressure, echo=FALSE}
+library(dplyr)
+
+my_data <- my_data %>%
+  mutate(
+    ReadingDateTime = as.character(ReadingDateTime),
+    date_time = as.POSIXct(ReadingDateTime, format = "%d/%m/%Y %H:%M", tz = "UTC"),
+  ) %>%
+  select(-ReadingDateTime)  
+
+
+
+```
+
+```{r pressure, echo=FALSE}
+head(my_data)
+```
+
+
+```{r pressure, echo=FALSE}
+library(ggplot2)
+
+ggplot(my_data, aes(x = date_time, y = Value, color = Species)) +
+  geom_line() +
+  facet_wrap(~ Site, scales = "free_y") +
+  labs(
+    title = "Pollutant Readings Over Time by Site",
+    x = "Date",
+    y = "Value",
+    color = "Species"
+  ) +
+  theme_minimal(base_size = 14) #plotting the values
+```
+Nox is highest, somewhat correlated
+
+```{r pressure, echo=FALSE}
+summary_stats <- my_data %>%
+  group_by(Site, Species) %>%
+  summarise(
+    count = n(),
+    missing_values = sum(is.na(Value)),
+    mean = mean(Value, na.rm = TRUE),
+    sd = sd(Value, na.rm = TRUE),
+    median = median(Value, na.rm = TRUE),
+    min = min(Value, na.rm = TRUE),
+    max = max(Value, na.rm = TRUE)
+  ) %>%
+  arrange(Site, Species)
+
+summary_stats
+```
+
+```{r pressure, echo=FALSE}
+library(ggplot2)
+
+ggplot(my_data, aes(x = Site, y = Value, fill = Site)) +
+  geom_violin(trim = FALSE, na.rm = TRUE) +
+  stat_summary(fun = median, geom = "point", shape = 95, size = 6, color = "black") +
+  facet_wrap(~ Species, scales = "free_y") +
+  labs(title = "Distribution of Measurements by Site (per Species)",
+       x = "Site", y = "Value") +
+  theme_minimal(base_size = 13) +
+  theme(legend.position = "none")
+```
+
+```{r pressure, echo=FALSE}
+df <- na.omit(my_data)
+library(dplyr)
+library(tidyr)
+
+# 1) Pivot to wide (aggregate duplicates by mean if needed)
+df_wide <- df %>%
+  select(Site, date_time, Species, Value) %>%
+  pivot_wider(
+    names_from = Species, values_from = Value,
+    values_fn  = mean,           # combine duplicates if same Site/date_time/Species
+    values_fill = NA_real_
+  )
+
+# 2) Keep only measurement columns
+X <- df_wide %>%
+  select(-Site, -date_time)
+
+# 3) Ensure numeric and finite
+X <- X %>%
+  mutate(across(everything(), ~as.numeric(.))) %>%     # drop factor encodings
+  select(where(~ !all(is.na(.)))) %>%                  # drop all-NA columns
+  filter(if_all(everything(), ~ is.finite(.)))         # drop rows with NA/Inf
+
+# 4) Run PCA
+pca <- prcomp(X, scale. = TRUE) #scale. for standartization
+summary(pca)
+
+
+```
+PC1 explains 72.3% of the total variance
+
+PC2 explains 11.0%
+
+PC3 explains 8.1%
+
+PC4 explains 5.2%
+
+PC5 explains 3.4%
+
+PC6 explains basically 0%
+
+```{r pressure, echo=FALSE}
+library(ggplot2)
+
+eig <- pca$sdev^2
+prop_var <- eig / sum(eig)
+df <- data.frame(
+  PC  = factor(seq_along(prop_var), labels = paste0("PC", seq_along(prop_var))),
+  Var = prop_var,
+  Cum = cumsum(prop_var)
+)
+
+ggplot(df, aes(x = PC, y = Var)) +
+  geom_col() +
+  geom_point(aes(y = Cum), size = 2) +
+  geom_line(aes(y = Cum, group = 1)) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
+  labs(title = "Scree Plot",
+       x = "Principal Component",
+       y = "Variance Explained (%)",
+       caption = "Bars: per-PC variance; Line: cumulative variance") +
+  theme_minimal()
+```
+
+```{r pressure, echo=FALSE}
+pca$rotation[, 1:3]
+```
+
+```{r pressure, echo=FALSE}
+library(ggplot2)
+library(ggfortify)
+
+# If you have metadata (e.g., Site/date_time) alongside X:
+# meta <- df_wide[, c("Site", "date_time")]  # adjust to your objects
+
+# 1) Biplot: PC1 vs PC2
+autoplot(
+  pca,
+  loadings = TRUE,        # show variable arrows
+  loadings.label = TRUE,  # label the arrows
+  loadings.label.size = 3,
+  x = 1, y = 2
+) +
+  ggtitle("PCA Biplot: PC1 vs PC2") +
+  theme_minimal()
+
+# 2) Biplot: PC2 vs PC3
+autoplot(
+  pca,
+  loadings = TRUE,
+  loadings.label = TRUE,
+  loadings.label.size = 3,
+  x = 2, y = 3
+) +
+  ggtitle("PCA Biplot: PC2 vs PC3") +
+  theme_minimal()
+```
+
+
+```{r pressure, echo=FALSE}
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+
+# 1) Keep an ID so we can trace rows
+df_wide <- df_wide %>%
+  arrange(Site, date_time) %>%
+  mutate(row_id = row_number())
+
+# 2) Choose numeric variables used in PCA (adjust the selection!)
+X <- df_wide %>% select(-Site, -date_time, -row_id)
+
+# 3) Complete-case mask
+idx <- complete.cases(X)
+
+# 4) PCA on complete rows only
+pca <- prcomp(X[idx, ], scale. = TRUE)
+
+# 5) Bind scores with matching meta rows
+scores <- cbind(
+  df_wide[idx, c("row_id", "Site", "date_time")],
+  as.data.frame(pca$x)
+)
+
+# 6) Long format for faceted time plots
+scores_long <- scores %>%
+  pivot_longer(starts_with("PC"), names_to = "Component", values_to = "Score")
+
+# 7) Plot (PC1–PC3 as example)
+ggplot(
+  dplyr::filter(scores_long, Component %in% c("PC1","PC2","PC3")),
+  aes(x = as.POSIXct(date_time), y = Score, color = Site)
+) +
+  geom_line() +
+  facet_wrap(~ Component, ncol = 1, scales = "free_y") +
+  labs(title = "PCA Scores Over Time (complete cases)",
+       x = "Time", y = "Score") +
+  theme_minimal()
+
+
+
+
+```
+
+```{r pressure, echo=FALSE}
+X <- seq(-10, 10, 1)
+Y <- X^2
+Z <- sin(X)
+
+par(mfrow = c(1, 2))  # two plots side-by-side
+
+# Plot Y = X²
+plot(X, Y, type = "l", col = "blue",
+     main = "Y = X²", xlab = "X", ylab = "Y")
+
+# Plot Z = sin(X)
+plot(X, Z, type = "l", col = "red",
+     main = "Z = sin(X)", xlab = "X", ylab = "Z")
+
+```
+
+```{r pressure, echo=FALSE}
+cor(X, Y)
+cor(X, Z)
+cor(Y, Z)
+
+```
+
+
+```{r pressure, echo=FALSE}
+df <- data.frame(X, Y, Z)
+pca <- prcomp(df, scale. = TRUE)
+summary(pca)
+```
+## Exercise 3
+
+### a)
+```{r pressure, echo=FALSE}
+aas_data <- read.csv("Aas_temperature_data.csv")
+head(aas_data)
+
+```
+
+
+```{r pressure, echo=FALSE}
+library(dplyr)
+library(tsibble)
+
+aas_data$Date <- as.Date(aas_data$Date)
+aas_tsbl <- aas_data %>%
+  select(Date, AvgTemp) %>%
+  arrange(Date) %>%
+  distinct(Date, .keep_all = TRUE) %>%
+  as_tsibble(index = Date)
+```
+
+
+
+```{r pressure, echo=FALSE}
+ggplot(aas_tsbl, aes(x = Date, y = AvgTemp)) +
+  geom_line() +
+  labs(
+    title = "Average Temperature over Time",
+    x = "Date",
+    y = "Avg. Temperature"
+  ) +
+  theme_minimal()
+```
+
+Visualized avg daily temperature from Aas. Starting from 1.st of January 1900 until now.
+
+### b)
+```{r pressure, echo=FALSE}
+gap_info <- aas_tsbl %>% 
+  count_gaps() #tsibble::count_gaps
+
+longest_gap <- gap_info %>% 
+  slice_max(.n, n = 1) #longest gap
+
+longest_gap
+```
+The longest gap in the Aas temperature dataset extends from 1988-05-01 to 1988-06-17, spanning 48 days.
+
+
+### c)
+```{r pressure, echo=FALSE}
+long_gaps <- gap_info %>% filter(.n >= 31)
+long_gaps #no gaps longer than 31 days after 1988-06-17.
+```
+
+```{r pressure, echo=FALSE}
+cutoff_date <-
+  if (nrow(long_gaps) == 0) {
+    min(aas_tsbl$Date, na.rm = TRUE)# no long gaps at all
+  } else {
+    max(long_gaps$.to, na.rm = TRUE) # day the last long gap ends
+  }
+
+cutoff_date
+```
+
+```{r, echo=FALSE}
+aas_tsbl_limited <- aas_tsbl %>% filter(Date >= cutoff_date) #limited series
+```
+### d
+```{r pressure, echo=FALSE}
+aas_tsbl_regular <- aas_tsbl_limited %>% #Fill in missing timestamps with NA
+  fill_gaps()
+
+total_n_missing <- sum(is.na(aas_tsbl_regular$AvgTemp))
+total_n_missing
+```
+Total 377 missing/NA values.
+### e
+```{r pressure, echo=FALSE}
+source("plot_imputed.R")
+library(imputeTS)
+
+
+aas_tsbl_imputed <- na_interpolation(aas_tsbl_regular, option = "linear") #spline interpolation
+plot_imputed(
+  aas_tsbl_regular$AvgTemp,
+  aas_tsbl_imputed$AvgTemp
+)
+
+```
+We are working with daily temperature data, which is continuous, smooth, and highly seasonal. The values change gradually over time without sudden jumps, and the series exhibits clear temporal structure with both trend and seasonality. Since the remaining gaps are relatively short (≤ 31 days after trimming), linear interpolation is an appropriate and reliable method for imputing missing values. After testing alternative approaches such as spline and moving average interpolation, linear interpolation provided the most visually consistent and realistic results, preserving the overall trend and seasonal pattern of the temperature data.
+
+### f
+```{r pressure, echo=FALSE}
+library(lubridate)
+
+
+aas_noleap <- aas_tsbl_imputed %>%
+  filter(!(month(Date) == 2 & mday(Date) == 29)) %>%
+  arrange(Date) 
+
+start_year <- year(min(aas_noleap$Date))
+start_day  <- yday(min(aas_noleap$Date))   # 1..365
+aas_ts <- ts(aas_noleap$AvgTemp, start = c(start_year, start_day), frequency = 365)
+
+head(aas_ts)
+
+```
+## Exercise 4
+### a)
+```{r pressure, echo=FALSE}
+acf(as.numeric(aas_ts), lag.max = 2008,
+    main = "Autocorrelation of Daily Avg Temperature (Aas)",
+    xlab = "Lag (Days)",
+    ylab = "Autocorrelation")
+```
+The autocorrelation function (ACF) of the daily average temperature at Aas shows a clear and repeating seasonal pattern. The autocorrelation is very high for short lags, confirming that temperatures change gradually from day to day. As the lag increases, the ACF oscillates between positive and negative values with a period of roughly one year, reflecting the annual temperature cycle. Positive peaks appear around 365 days, while negative correlations occur around 180 days, corresponding to the contrast between summer and winter. The oscillations gradually decrease in magnitude with longer lags, indicating that while the yearly seasonal pattern remains consistent, inter-annual variations slightly weaken the correlation over time.
+
+### b)
+
+```{r pressure, echo=FALSE}
+acf(as.numeric(aas_ts), lag.max = 28,
+    main = "Short Lag ACF",
+    ylab = "Autocorrelation",
+    xlab = "Lag (days)")
+```
+The short-lag ACF shows very high and slowly declining correlations over the first month, indicating that daily temperatures are strongly dependent on preceding days and that weather in Aas changes gradually over time, without short-term oscillations.
+### c)
+
+```{r pressure, echo=FALSE}
+
+library(dplyr)
+library(lubridate)
+library(ggplot2)
+
+# Pick calendar days (MM-DD). Add more to compare across the year.
+days <- c("10-01","01-15","03-15","05-15","07-15","09-15","11-15")  # days spread through the year
+
+plot_days <- aas_tsbl_imputed %>%
+  mutate(Year = year(Date),
+         mmdd = format(Date, "%m-%d")) %>%
+  filter(mmdd %in% days)
+
+ggplot(plot_days, aes(x = Year, y = AvgTemp)) +
+  geom_point(alpha = 0.75) +
+  geom_smooth(method = "loess", se = FALSE, span = 0.6) +
+  facet_wrap(~ mmdd, scales = "free_y") +
+  labs(
+    title = "Temperature on Selected Calendar Days by Year",
+    x = "Year",
+    y = "Average Temperature (°C)"
+  ) +
+  theme_minimal()
+
+
+```
+
+### d)
+```{r pressure, echo=FALSE}
+# 5.5 years ≈ 2008 days (for later ACF)
+stl1 <- stl(
+  aas_ts,
+  s.window = "periodic",        # seasonality fixed across years
+  t.window = 5*365 + 1,         # VERY smooth trend (≈ 5 years)
+  robust   = TRUE,              # down-weight outliers
+  l.window = 13                 # default low-pass
+)
+plot(stl1)
+```
+Using a fixed seasonal window (s.window = "periodic") and a long trend window (~5 years) gives a very smooth trend that captures long-term temperature changes. The seasonal pattern is identical across all years, representing a stable yearly cycle. This setup highlights slow multi-year variations in mean temperature, but it cannot reflect gradual changes in the amplitude or shape of the seasonal pattern over time.
+
+```{r pressure, echo=FALSE}
+stl2 <- stl(
+  aas_ts,
+  s.window = 365 + 1,           # allow annual pattern to drift slowly over time
+  t.window = 5*365 + 1,
+  robust   = TRUE
+)
+plot(stl2)
+
+```
+Allowing the seasonal component to vary slowly (s.window = 365+1) while keeping a long trend window produces a similar long-term trend but a slightly more flexible seasonal pattern. This decomposition better reflects small shifts in the timing and strength of the annual temperature cycle, resulting in a more realistic representation of the data. The remainder is slightly smaller, indicating an improved fit.
+
+```{r pressure, echo=FALSE}
+stl3 <- stl(
+  aas_ts,
+  s.window = 365 + 1,
+  t.window = 2*365 + 1,         # ≈ 2-year trend
+  robust   = TRUE
+)
+plot(stl3)
+```
+When the trend window is shortened to about two years, the trend becomes noticeably more wiggly, capturing shorter-term fluctuations rather than only slow climatic changes. While this can reveal medium-term variability, it also introduces more noise and some residual correlation in the remainder, meaning the decomposition no longer isolates the long-term trend as effectively.
+
+### e)
+```{r pressure, echo=FALSE}
+best <- stl(
+  aas_ts,
+  s.window = 365 + 1,     # allow annual pattern to drift slowly
+  t.window = 5*365 + 1,   # very smooth multi-year trend (~5 years)
+  l.window = 13,          # default low-pass 
+  robust   = TRUE,        # down-weight extremes (heat/cold snaps)
+  s.degree = 1,
+  t.degree = 1
+)
+```
+
+Based on Cleveland et al. (1990) and the STL results, the best balance is achieved using a slowly evolving seasonal component and a long, smooth trend. I recommend setting s.window = 365 + 1 to allow the annual pattern to vary gradually, t.window = 5*365 + 1 to capture multi-year temperature trends, and robust = TRUE to reduce the influence of outliers. This combination provides a realistic long-term trend, accommodates small changes in seasonal amplitude, and leaves a nearly white-noise remainder suitable for further analysis.
+
+```{r pressure, echo=FALSE}
+
+```
+
+
