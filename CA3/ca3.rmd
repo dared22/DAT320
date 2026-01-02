@@ -1,0 +1,259 @@
+---
+title: "assignment3"
+author: "Pavel Gulin, Erling Mysen, Kristian Mathias Røhne"
+date: "2025-10-30"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+
+library(tidyquant)
+library(dplyr)
+library(lubridate) 
+library(bruceR)
+library(vars)
+library(ggplot2) 
+library(forecast)
+library(tidyr)
+library(purrr)
+library(scales)
+library(moments)
+library(urca)
+library(reshape2)
+library(zoo)
+library(gridExtra)
+library(tseries)
+
+source("functions_assignment_3.R")
+```
+
+## Exercise 1
+
+### a)
+
+```{r read-data}
+symbols <- c("AAPL", "MSFT", "INTC")
+df_all <- get_finance_data(symbols, "2000-01-01", Sys.Date())
+
+head(df_all)
+```
+
+```{r monthly-data}
+monthly_data <- df_all %>%
+  mutate(year_month = floor_date(date, "month")) %>%
+  group_by(symbol, year_month) %>%
+  slice_max(date, n = 1, with_ties = FALSE) %>%
+  dplyr::select(date, symbol, adjusted) %>%
+  ungroup() %>%
+  arrange(symbol, date)
+```
+
+```{r create-dataframe}
+monthly_prices <- monthly_data %>%
+  dplyr::select(date, symbol, adjusted) %>%
+  pivot_wider(names_from = symbol, values_from = adjusted) %>%
+  arrange(date)
+```
+
+```{r summarize-data}
+summary(monthly_prices[, -1])
+```
+
+### b)
+```{r plot-setup}
+historical_events <- data.frame(
+  date = as.Date(c("2001-09-11", "2008-10-01", "2020-03-15",
+                   "2020-03-23", "2022-02-24", "2007-01-09",
+                   "2015-07-29")),
+  event = c("9/11 Attacks", "Financial Crisis", "COVID-19 Pandemic", 
+            "COVID Market Bottom", "Russia-Ukraine War", "iPhone Announced",
+            "Windows 10 Launch")
+)
+```
+
+```{r plot-prices-log}
+monthly_data %>%
+  ggplot(aes(x = date, y = adjusted, color = symbol)) +
+  geom_line(size = 0.8) +
+  geom_vline(data = historical_events, aes(xintercept = date),
+             color = "gray40", linetype = "dashed", alpha = 0.6) +
+  geom_text(data = historical_events, aes(x = date, y = 300, label = event),
+            angle = 90, hjust = 0, size = 2.5, color = "black") +
+  scale_y_log10(labels = scales::dollar_format()) +
+  scale_color_manual(values = c("AAPL" = "#1f77b4", "MSFT" = "#2ca02c", "INTC" = "#8c564b")) +
+  labs(title = "Stock Price Evolution (Log Scale)", x = "Year", y = "Price (USD, log scale)") +
+  theme_minimal()
+```
+
+
+
+### c)
+
+```{r calculate-log-returns}
+log_returns <- monthly_data %>%
+  arrange(symbol, date) %>%
+  group_by(symbol) %>%
+  mutate(log_return = log(adjusted / lag(adjusted))) %>%
+  filter(!is.na(log_return) & !is.infinite(log_return)) %>%
+  ungroup()
+```
+
+```{r log-returns-statistics}
+volatility_stats <- log_returns %>%
+  group_by(symbol) %>%
+  summarise(
+    observations = n(),
+    mean_return = mean(log_return, na.rm = TRUE),
+    volatility = sd(log_return, na.rm = TRUE),
+    annualized_vol = sd(log_return, na.rm = TRUE) * sqrt(12),
+    min_return = min(log_return, na.rm = TRUE),
+    max_return = max(log_return, na.rm = TRUE),
+    .groups = 'drop'
+  )
+
+print(volatility_stats)
+```
+
+### d)
+```{r distribution-analysis}
+# Histogram
+log_returns %>%
+  ggplot(aes(x = log_return, fill = symbol)) +
+  geom_histogram(aes(y = ..density..), bins = 30, alpha = 0.7) +
+  facet_wrap(~symbol) +
+  scale_fill_manual(values = c("AAPL" = "#1f77b4", "MSFT" = "#2ca02c", "INTC" = "#8c564b")) +
+  labs(title = "Distribution of Log Returns", x = "Log Return", y = "Density") +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+# Density plot comparison
+log_returns %>%
+  ggplot(aes(x = log_return, color = symbol)) +
+  geom_density(alpha = 0.3, size = 1) +
+  scale_color_manual(values = c("AAPL" = "#1f77b4", "MSFT" = "#2ca02c", "INTC" = "#8c564b")) +
+  labs(title = "Density Comparison of Log Returns", x = "Log Return", y = "Density") +
+  theme_minimal()
+```
+
+### e)
+
+```{r cross-correlation-analysis}
+log_returns_wide <- log_returns %>%
+  dplyr::select(date, symbol, log_return) %>%
+  pivot_wider(names_from = symbol, values_from = log_return) %>%
+  arrange(date) %>%
+  filter(!is.na(AAPL) & !is.na(MSFT) & !is.na(INTC))
+
+cor_matrix <- log_returns_wide %>%
+  dplyr::select(AAPL, MSFT, INTC) %>%
+  cor(use = "complete.obs")
+
+print(round(cor_matrix, 4))
+``` 
+
+## Exercise 2
+
+### a)
+```{r time-series-analysis-apple}
+apple_data <- monthly_data %>%
+  filter(symbol == "AAPL") %>%
+  arrange(date) %>%
+  dplyr::select(date, adjusted)
+
+apple_log_returns <- log_returns %>%
+  filter(symbol == "AAPL") %>%
+  arrange(date) %>%
+  dplyr::select(date, log_return)
+
+apple_ts <- ts(apple_data$adjusted, start = c(2000, 2), frequency = 12)
+apple_returns_ts <- ts(apple_log_returns$log_return, start = c(2000, 3), frequency = 12)
+```
+
+### b)
+
+```{r stl-decomposition}
+# STL decomposition for Apple prices
+stl_price <- stl(apple_ts, s.window = "periodic")
+plot(stl_price, main = "STL Decomposition: Apple Stock Prices")
+
+# STL decomposition for Apple log returns
+stl_returns <- stl(apple_returns_ts, s.window = "periodic")
+plot(stl_returns, main = "STL Decomposition: Apple Log Returns")
+```
+
+### c) 
+
+```{r autocorrelation-analysis}
+# Autocorrelation and Partial Autocorrelation Analysis
+
+# Short-term analysis (1 year = 12 lags)
+par(mfrow = c(2, 2))
+
+# ACF and PACF for Apple prices - short term
+acf(apple_ts, lag.max = 12, main = "ACF: Apple Prices (1 year)")
+pacf(apple_ts, lag.max = 12, main = "PACF: Apple Prices (1 year)")
+
+# ACF and PACF for Apple log returns - short term
+acf(apple_returns_ts, lag.max = 12, main = "ACF: Apple Log Returns (1 year)")
+pacf(apple_returns_ts, lag.max = 12, main = "PACF: Apple Log Returns (1 year)")
+
+# Long-term analysis (20 years = 240 lags)
+par(mfrow = c(2, 2))
+
+# ACF and PACF for Apple prices - long term
+acf(apple_ts, lag.max = 240, main = "ACF: Apple Prices (20 years)")
+pacf(apple_ts, lag.max = 240, main = "PACF: Apple Prices (20 years)")
+
+# ACF and PACF for Apple log returns - long term
+acf(apple_returns_ts, lag.max = 240, main = "ACF: Apple Log Returns (20 years)")
+pacf(apple_returns_ts, lag.max = 240, main = "PACF: Apple Log Returns (20 years)")
+
+# Reset plot layout
+par(mfrow = c(1, 1))
+```
+
+### d)
+
+### e) 
+
+```{r granger-causality-test}
+# Prepare data for Granger causality tests - create wide format data
+# For PRICES
+price_data <- monthly_data %>%
+  dplyr::select(date, symbol, adjusted) %>%
+  pivot_wider(names_from = symbol, values_from = adjusted) %>%
+  arrange(date) %>%
+  filter(!is.na(AAPL) & !is.na(MSFT) & !is.na(INTC)) %>%
+  dplyr::select(AAPL, MSFT, INTC)
+
+# For LOG RETURNS  
+returns_data <- log_returns %>%
+  dplyr::select(date, symbol, log_return) %>%
+  pivot_wider(names_from = symbol, values_from = log_return) %>%
+  arrange(date) %>%
+  filter(!is.na(AAPL) & !is.na(MSFT) & !is.na(INTC)) %>%
+  dplyr::select(AAPL, MSFT, INTC)
+
+# Granger causality tests for PRICES
+print("=== GRANGER CAUSALITY TESTS FOR PRICES ===")
+var_model_prices <- VAR(price_data, p = 2)
+granger_test(var_model_prices)
+
+# Granger causality tests for LOG RETURNS
+print("=== GRANGER CAUSALITY TESTS FOR LOG RETURNS ===")
+var_model_returns <- VAR(returns_data, p = 2)
+granger_test(var_model_returns)
+```
+
+### f) 
+
+## Exercise 3
+
+### a)
+
+## Exercise 4
+
+### a) 

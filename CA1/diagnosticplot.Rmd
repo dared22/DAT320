@@ -1,0 +1,320 @@
+### Inspiration for exercise
+- https://www.andrew.cmu.edu/user/achoulde/94842/homework/regression_diagnostics.html
+- You may find this useful to solve the task.
+
+a) Linearity
+
+Meaning: The relationship between predictors x and response y is linear.
+
+Diagnosis: Plot residuals vs. fitted values (should show no pattern). Partial regression plots also help.
+
+b) Homoscedasticity (constant variance)
+
+Meaning: The variance of residuals is the same across all fitted values.
+
+Diagnosis: Plot residuals vs. fitted values. If spread increases or decreases (a funnel shape), heteroscedasticity is present. Use statistical tests like Breusch–Pagan or White’s test.
+
+c) Independence
+
+Meaning: Observations (and residuals) are independent from each other.
+
+Diagnosis: For time series, check autocorrelation plots (ACF) or Durbin–Watson test. For cross-sectional data, independence is usually assumed based on design.
+
+d) Normality
+
+Meaning: Residuals are normally distributed (important for inference, not prediction).
+
+Diagnosis: Histogram or Q–Q plot of residuals. Formal tests like Shapiro–Wilk or Kolmogorov–Smirnov can be used.
+
+
+
+```{r}
+library(ggplot2)
+
+set.seed(42)
+n <- 1000
+x <- 1:n
+
+# Changeable parameters
+# - Change the parameters to affect the generated data points below.
+# - You may copy this code multiple times to answer all the questions in the exercise.
+# - You may find it reasonable to argue for multiple violations from a single generated set of data points.
+
+contant <- 0
+trend <- 0
+curve_magnitue <- 0
+curve_period <- 100
+curve_shift <- 0
+normal_noise_magnitue <- 1
+norm_noise_periode <- 10000
+shift_norm_noise <- 500
+non_normal_noise_magnitue <- 0
+non_norm_noice_periode <- 10000
+shift_non_norm_noise <- 500
+
+# put y.gen into a function
+y_gen <- function(
+    contant, trend, curve_magnitue, curve_period,
+    curve_shift, normal_noise_magnitue, norm_noise_periode,
+    shift_norm_noise, non_normal_noise_magnitue,
+    non_norm_noice_periode, shift_non_norm_noise
+    ){
+  contant + trend * x +
+  curve_magnitue * sin((x/curve_period + curve_shift)*pi) + 
+  normal_noise_magnitue*cos((
+    x / norm_noise_periode + shift_norm_noise/norm_noise_periode)*pi
+    )*rnorm(n, sd = 3) +
+  non_normal_noise_magnitue*cos(
+    (x/non_norm_noice_periode + shift_non_norm_noise/non_norm_noice_periode)*pi
+  ) * rexp(n, rate = 0.2)
+  }
+```
+
+```{r}
+y.gen <- y_gen(contant, trend, curve_magnitue, curve_period,
+               curve_shift, normal_noise_magnitue, norm_noise_periode,
+               shift_norm_noise, non_normal_noise_magnitue,
+               non_norm_noice_periode, shift_non_norm_noise)
+
+p <- qplot(x, y.gen, ylab = "y") +
+  geom_point(size = 0.1) +
+  labs(title = "Data generate for linear regrestion")
+
+# Display the plot
+print(p)
+```
+
+```{r}
+# ---- A: All assumptions hold ----
+set.seed(1)
+
+contant <- 0
+trend <- 0.2                # linear trend
+curve_magnitue <- 0           # no curvature
+curve_period <- 100
+curve_shift <- 0
+normal_noise_magnitue <- 1
+norm_noise_periode <- 1e9     # ~constant variance (cos ~ 1)
+shift_norm_noise <- 0
+non_normal_noise_magnitue <- 0
+non_norm_noice_periode <- 1e9
+shift_non_norm_noise <- 0
+
+y.gen <- y_gen(
+  contant=contant, trend=trend, curve_magnitue=curve_magnitue, curve_period=curve_period,
+  curve_shift=curve_shift, normal_noise_magnitue=normal_noise_magnitue, norm_noise_periode=norm_noise_periode,
+  shift_norm_noise=shift_norm_noise, non_normal_noise_magnitue=non_normal_noise_magnitue,
+  non_norm_noice_periode=non_norm_noice_periode, shift_non_norm_noise=shift_non_norm_noise
+)
+
+qplot(x, y.gen) + geom_point(size=0.1) + labs(title="A) Data (assumptions hold)", y="y")
+lm.gen <- lm(y.gen ~ x)
+plot(lm.gen, which = 1)  # Residuals vs Fitted (should be patternless)
+plot(lm.gen, which = 2)  # Q-Q (close to line)
+plot(lm.gen, which = 3)  # Scale-Location (flat-ish)
+plot(lm.gen, which = 5)  # Leverage (no standout points)
+```
+```{r}
+# ---- B: Heteroscedasticity ----
+set.seed(2)
+
+contant <- 0
+trend <- 0.01
+curve_magnitue <- 0
+curve_period <- 100
+curve_shift <- 0
+normal_noise_magnitue <- 1
+norm_noise_periode <- 500      # variance oscillates strongly across x
+shift_norm_noise <- 0
+non_normal_noise_magnitue <- 0
+non_norm_noice_periode <- 1e9
+shift_non_norm_noise <- 0
+
+y.gen <- y_gen(
+  contant=contant, trend=trend, curve_magnitue=curve_magnitue, curve_period=curve_period,
+  curve_shift=curve_shift, normal_noise_magnitue=normal_noise_magnitue, norm_noise_periode=norm_noise_periode,
+  shift_norm_noise=shift_norm_noise, non_normal_noise_magnitue=non_normal_noise_magnitue,
+  non_norm_noice_periode=non_norm_noice_periode, shift_non_norm_noise=shift_non_norm_noise
+)
+
+qplot(x, y.gen) + geom_point(size=0.1) + labs(title="B) Data (heteroscedastic)", y="y")
+lm.gen <- lm(y.gen ~ x)
+plot(lm.gen, which = 1)  # Residuals vs Fitted: changing spread (violates homoscedasticity)
+plot(lm.gen, which = 2)  # Q-Q
+plot(lm.gen, which = 3)  # Scale-Location: upward/downward pattern (non-constant variance)
+plot(lm.gen, which = 5)  # Leverage
+
+
+```
+```{r}
+# ---- C: Nonlinearity ----
+set.seed(3)
+
+contant <- 0
+trend <- 0.0                  # keep linear part minimal to expose curvature
+curve_magnitue <- 20          # visible curvature
+curve_period <- 100           # periodic curve in mean
+curve_shift <- 0
+normal_noise_magnitue <- 1
+norm_noise_periode <- 1e9     # ~constant variance to isolate nonlinearity
+shift_norm_noise <- 0
+non_normal_noise_magnitue <- 0
+non_norm_noice_periode <- 1e9
+shift_non_norm_noise <- 0
+
+y.gen <- y_gen(
+  contant=contant, trend=trend, curve_magnitue=curve_magnitue, curve_period=curve_period,
+  curve_shift=curve_shift, normal_noise_magnitue=normal_noise_magnitue, norm_noise_periode=norm_noise_periode,
+  shift_norm_noise=shift_norm_noise, non_normal_noise_magnitue=non_normal_noise_magnitue,
+  non_norm_noice_periode=non_norm_noice_periode, shift_non_norm_noise=shift_non_norm_noise
+)
+
+qplot(x, y.gen) + geom_point(size=0.1) + labs(title="C) Data (nonlinear mean)", y="y")
+lm.gen <- lm(y.gen ~ x)
+plot(lm.gen, which = 1)  # Residuals vs Fitted: curved pattern (violates linearity)
+plot(lm.gen, which = 2)  # Q-Q
+plot(lm.gen, which = 3)  # Scale-Location
+plot(lm.gen, which = 5)  # Leverage
+
+```
+
+
+```{r}
+# ---- D: Non-normal residuals ----
+set.seed(4)
+
+contant <- 0
+trend <- 0.01
+curve_magnitue <- 0
+curve_period <- 100
+curve_shift <- 0
+normal_noise_magnitue <- 0     # turn off normal part to isolate non-normality
+norm_noise_periode <- 1e9
+shift_norm_noise <- 0
+non_normal_noise_magnitue <- 1 # exponential noise component on
+non_norm_noice_periode <- 1e9  # ~constant scale
+shift_non_norm_noise <- 0
+
+y.gen <- y_gen(
+  contant=contant, trend=trend, curve_magnitue=curve_magnitue, curve_period=curve_period,
+  curve_shift=curve_shift, normal_noise_magnitue=normal_noise_magnitue, norm_noise_periode=norm_noise_periode,
+  shift_norm_noise=shift_norm_noise, non_normal_noise_magnitue=non_normal_noise_magnitue,
+  non_norm_noice_periode=non_norm_noice_periode, shift_non_norm_noise=shift_non_norm_noise
+)
+
+qplot(x, y.gen) + geom_point(size=0.1) + labs(title="D) Data (non-normal errors)", y="y")
+lm.gen <- lm(y.gen ~ x)
+plot(lm.gen, which = 1)  # Residuals vs Fitted
+plot(lm.gen, which = 2)  # Q-Q: systematic deviations (skew/heavy tails)
+plot(lm.gen, which = 3)  # Scale-Location
+plot(lm.gen, which = 5)  # Leverage
+
+```
+a) Linearity violated
+
+What it means: The conditional mean 
+𝐸
+[
+𝑌
+∣
+𝑋
+]
+E[Y∣X] isn’t a straight line in 
+𝑋
+X.
+
+In your generator: A curved mean like a sinusoid breaks linearity (e.g., curve_magnitue > 0 so 
+𝑌
+=
+𝛽
+0
++
+𝛽
+1
+𝑋
++
+𝐴
+sin
+⁡
+(
+⋅
+)
++
+𝜀
+Y=β
+0
+	​
+
++β
+1
+	​
+
+X+Asin(⋅)+ε).
+
+What you’ll see: Residuals vs Fitted shows a systematic curve/wave (not a random cloud around 0). The linear fit is biased because it tries to force a line through a curved signal.
+
+b) Homoscedasticity violated
+
+What it means: The error variance changes with 
+𝑋
+X (heteroscedasticity).
+
+In your generator: Make the noise scale depend on 
+𝑋
+X (e.g., your cosine envelope via norm_noise_periode/shift_norm_noise so the spread oscillates with 
+𝑥
+x).
+
+What you’ll see: Residuals vs Fitted (and Scale–Location) show changing spread—funnel shapes or periodic widening/narrowing. Coefficient SEs become unreliable unless you use robust SEs or model the variance.
+
+c) Independence violated
+
+What it means: Errors are correlated across observations (common with time index 
+𝑥
+=
+1
+:
+𝑛
+x=1:n).
+
+In your data: If errors contain persistence/seasonality (e.g., any serial pattern in the noise term), residuals at nearby 
+𝑥
+x are autocorrelated.
+
+What you’ll see: Residuals vs Fitted may show runs; an ACF of residuals has significant lags; Durbin–Watson deviates from ~2. Consequence: SEs are understated and tests overstate significance. (OLS estimates remain unbiased if regressors are exogenous but are inefficient.)
+
+d) Normality violated
+
+What it means: Error distribution isn’t normal (e.g., skewed or heavy‐tailed).
+
+In your generator: Turn on the exponential component (non_normal_noise_magnitue > 0) or any heavy‐tailed noise.
+
+What you’ll see: Q–Q plot deviates from the diagonal: bowed tails (heavy tails), or systematic curvature (skew). Histograms show skew/kurtosis. OLS coefficients are still unbiased/consistent, but t/F inference can be off for small samples (robust or bootstrap SEs help).
+
+
+
+4)
+a)
+Correlation is a standardized measure of the linear relationship between two random variables. It tells us how strongly and in what direction (positive or negative) two variables move together, on a scale from –1 to +1. Covariance measures the joint variability of two random variables: A positive covariance means that when X is above its mean, Y tends to be above its mean as well (and vice versa).
+
+b)
+
+Cov(αX,Y)=αCov(X,Y)
+
+c)
+
+Correlation is unit-free — rescaling doesn’t matter, but flipping the axis flips the sign.
+If you multiply a variable by a positive number (e.g. converting height from meters to centimeters), you’re just stretching or shrinking the scale. The relationship between X and Y doesn’t change at all. So the correlation stays exactly the same.
+
+Correlation cares only about the relationship in variation, not about absolute levels.
+Adding or subtracting a constant is just moving the scale up or down (e.g. changing the temperature scale from Celsius to Kelvin, or shifting all salaries up by 10,000).
+
+This shift doesn’t change how the variables move together. The “pattern of ups and downs” between X and Y is unchanged.
+
+d)
+
+Partial correlation measures the linear link between 
+X and Y after removing the linear influence of Z from both. Equivalently: regress X on Z, regress Y on Z, and then correlate the two sets of residuals.
+
+Numerator: start with the raw correlation between X and Y; subtract the part that can be “explained” by both being related to Z.
+Denominator: rescales by how much unique variation remains in X and Y after accounting for Z.

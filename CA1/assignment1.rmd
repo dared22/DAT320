@@ -1,0 +1,799 @@
+---
+title: "assignment1"
+authors: "Pavel Gulin, Erling Mysen, Kristian Mathias Røhne"
+date: "2025-09-26"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r load-libraries, message=FALSE, warning=FALSE}
+library(readr)
+library(lubridate)
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+library(fastDummies)
+```
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+setwd("C:/Users/kristianrohne/OneDrive - Norwegian University of Life Sciences/NMBU/Fall2025/dat320/assignment1")
+
+# For interactive plotting in popup windows
+if (interactive()) {
+  # For Windows - open plots in separate window
+  if (.Platform$OS.type == "windows") {
+    options(device = "windows")
+  } else {
+    options(device = "X11")
+  }
+}
+```
+
+## Exercise 1: Air Pollution Analysis
+
+### A) Data Loading and Preprocessing
+
+```{r load-data}
+data <- read.csv("air_polution.csv", 
+                 stringsAsFactors = FALSE, 
+                 fileEncoding = "UTF-8")
+
+# Inspect
+str(data)
+head(data)
+summary(data)
+```
+
+
+```{r data-conversion}
+data <- data %>%
+  mutate(
+    area = as.factor(area),              # convert area to factor
+    station = as.factor(station),        # convert station to factor
+    component = as.factor(component),    # convert component to factor
+    dateTime = as.POSIXct(dateTime)       # convert dateTime to POSIXct (date-time)
+  )
+```
+
+
+```{r inspect-data}
+# Inspect result
+str(data)
+summary(data)
+```
+
+### B & C) Time Range Analysis
+
+```{r time-ranges}
+time_ranges <- data %>%
+  
+  # make timeseries of each combination of area, station and component
+  group_by(area, station, component) %>%
+  summarise(
+    # Add start_data and end_date columns
+    start_date = min(dateTime),
+    end_date   = max(dateTime),
+    mean_value   = mean(value),
+    sd_value     = sd(value),
+    median_value = median(value),
+    min_value    = min(value),
+    max_value    = max(value),
+    # For getting a clean summary table
+    .groups = "drop"
+  )
+
+time_ranges
+```
+C)
+
+```{r}
+make_pm_plot <- function(data, pm_type) {
+  data_filtered= data %>%
+    filter(component == pm_type)
+  
+    ggplot(data_filtered ,aes(x = dateTime, y = value, color = area)) +
+    geom_line() +
+    labs(
+      title = paste(pm_type, "over time"),
+      x = "Date",
+      y = bquote(.(pm_type) ~ "(" * mu * "g/m"^3 * ")"),
+      color = "Area"
+    )
+}
+```
+
+
+```{r}
+# PM2.5 plot
+pm25_plot <- make_pm_plot(data, "PM2.5")
+
+# For popup window display
+if (interactive()) {
+  windows()  # Opens new window on Windows
+  print(pm25_plot)
+} else {
+  pm25_plot  # For knitting
+}
+```
+
+```{r}
+# PM10 plot
+pm10_plot <- make_pm_plot(data, "PM10")
+pm10_plot
+```
+Comments on the plots: On the PM2.5 and PM10 plot, it looks like there is a gap or missing data on the Oslo "line" after x= 2024.
+
+d)
+
+```{r}
+sum(is.na(data))
+```
+answer to d: Even to there are no Nan-values in the data set, the data set is still missing observations (rows). So we're simply missing data on the visible gaps in the plots, the data is absent from the data set. 
+
+
+e) 
+```{r}
+data_aug2025 <- data %>%
+  filter(year(dateTime) == 2025, month(dateTime) == 8)
+```
+
+  
+```{r}
+# PM2.5 plot
+pm25_plot <- make_pm_plot(data_aug2025, "PM2.5")
+pm25_plot
+```
+Comments on plot: Drammen, Oslo, and Moss follow very similar trends in PM2.5 levels. Bergen shows more variation but still correlates somewhat with the others. Tromsø is not included in the PM2.5 plot because the dataset contains no PM2.5 measurements for Tromsø (only PM10).
+
+
+```{r}
+# PM10 plot
+pm10_plot <- make_pm_plot(data_aug2025, "PM10")
+pm10_plot
+```
+Comments on plot: Drammen, Oslo, and Moss follow very similar trends in PM10 levels also. Tromsø and Bergen shows a bit more variation and has less correlation with the others
+
+g)
+
+```{r}
+make_pm_boxplot <- function(data, pm_type) {
+  data_filtered= data %>%
+    filter(component == pm_type)
+  ggplot(data_filtered, aes(x = area, y = value, fill = area)) +
+    geom_boxplot() +
+    facet_wrap(~ component, scales = "free_y")
+}
+```
+
+
+```{r}
+# PM2.5 plot
+pm25_boxplot <- make_pm_boxplot(data, "PM2.5")
+pm25_boxplot
+
+# PM10 plot
+pm10_boxplot <- make_pm_boxplot(data, "PM10")
+pm10_boxplot
+```
+For both plots: of pm-types, there are a lot of observations above Q3 + 1.5IQR.Oslo has the highest mean, and Bergen (Tromsø also in the PM10 plot) has the lowest means.There is also a bigger variation in the observed values in Oslo, Moss and Drammen, compared to Bergen (and Tromsø in the PM10 plot).
+
+Excercise 2) 
+a)
+
+```{r}
+library(readr)
+temp_data <- read_csv2(
+  "temperature_data.csv",
+  col_types = cols(
+    area     = col_character(),
+    station  = col_character(),
+    dateTime = col_date(format = "%d.%m.%Y"), 
+    avgTemp  = col_double()
+  )
+)
+
+
+temp_data <- temp_data %>%
+  mutate(
+    area = as.factor(area),              # convert area to factor
+    station = as.factor(station),        # convert station to factor
+    dateTime = as.POSIXct(dateTime),       # convert dateTime to POSIXct (date-time)
+    avgTemp = as.numeric(gsub(",", ".", avgTemp))
+  )
+
+# Inspect result
+str(temp_data)
+summary(temp_data)
+head(temp_data)
+
+
+```
+
+```{r time-ranges-temp}
+time_ranges <- temp_data %>%
+  
+  # make time-series of each combination of area, station and component
+  group_by(area, station) %>%
+  summarise(
+    # Add start_data and end_date columns
+    mean_value   = mean(avgTemp),
+    sd_value     = sd(avgTemp),
+    min_value    = min(avgTemp),
+    max_value    = max(avgTemp),
+    # For getting a clean summary table
+    .groups = "drop"
+  )
+
+time_ranges
+
+```
+
+
+Comments on summary statistics: Bergen has the highest mean temperature, while Tromsø has the lowest. Bergen also has the highest maximum temperature, while Tromsø has the lowest minimum temperature. The standard deviation is highest in Drammen, indicating more variability in temperature readings there compared to other locations.
+
+c)
+
+```{r}
+ggplot(temp_data, aes(x = dateTime, y = avgTemp, color = area, group = area)) +
+  geom_line() +
+  labs(
+    title = "Daily average temperature by area",
+    x = "Date",
+    y = "Avg temperature (\u00B0C)"
+  )
+
+ggplot(
+  temp_data,
+  aes(x = dateTime, y = avgTemp)
+) +
+  geom_line() +
+  facet_wrap(~ area, ncol = 2, scales = "free_y") +  # 5 plots/panels
+  labs(
+    title = "Daily average temperature by area",
+    x = "Date",
+    y = "Avg temperature (\u00B0C)"
+  )
+```
+Comments on plot: It looks like there are missing data, especially in Tromsø.It looks like the cities have very similar temperature trends.
+
+d)
+
+```{r}
+ggplot(temp_data, aes(x = avgTemp)) +
+  geom_histogram(bins = 30, color = "white") +
+  facet_wrap(~ area, ncol = 2) +
+  labs(title = "Temperature distribution by area",
+       x = "Avg temperature (\u00B0C)", y = "Count")
+```
+
+Bergen is unimodal and close to normally distributed.
+The other locations are bimodal or flat-topped, likely because winter and summer create two peaks.
+Tromsø is left-skewed (long cold tail with more extreme cold days).
+Oslo is right-skewed (occasional warmer extremes).
+
+e)
+
+```{r}
+# 1) Build per-day tables
+poll_daily <- data %>%
+  mutate(date = as.Date(dateTime)) %>%
+  select(area, date, station, component, value)
+
+temp_daily <- temp_data %>%
+  mutate(date = as.Date(dateTime)) %>%
+  group_by(area, date) %>%
+  summarise(avgTemp = mean(avgTemp), .groups = "drop")
+
+# 2) Inner join on (area, date)
+df_joined <- inner_join(poll_daily, temp_daily, by = c("area", "date"))
+
+str(df_joined)
+head(df_joined, 10)
+```
+
+f)
+```{r}
+area_name <- "Drammen"
+pollutant  <- "PM2.5"
+
+df_area <- df_joined %>%
+  filter(area == area_name, component == pollutant)
+
+ggplot(df_area, aes(x = date)) +
+  geom_line(aes(y = value, color = "PM2.5"), size = 1) +
+  geom_line(aes(y = avgTemp, color = "Temperature"), size = 1) +
+  labs(
+    title = paste(area_name, "-", pollutant, "and Temperature"),
+    x = "Date",
+    y = "Value (µg/m³ or °C)"
+  ) +
+  scale_color_manual(values = c("PM2.5" = "blue", "Temperature" = "red"), name = "Measurement") +
+  theme(legend.position = "top")
+```
+
+```{r}
+area_name <- "Drammen"
+pollutant  <- "PM10"
+
+df_area <- df_joined %>%
+  filter(area == area_name, component == pollutant)
+
+ggplot(df_area, aes(x = date)) +
+  geom_line(aes(y = value, color = "PM10"), size = 1) +
+  geom_line(aes(y = avgTemp, color = "Temperature"), size = 1) +
+  labs(
+    title = paste(area_name, "-", pollutant, "and Temperature"),
+    x = "Date",
+    y = "Value (µg/m³ or °C)"
+  ) +
+  scale_color_manual(values = c("PM10" = "blue", "Temperature" = "red"), name = "Measurement") +
+  theme(legend.position = "top")
+```
+
+g)
+Around January 2025, we see that PM2.5 values rise as the temperature drops, suggesting a negative correlation.
+around July 2025, the opposite seems to happen: pollution values increase together with temperature, suggesting a positive correlation in that period.
+So overall, there is some correlation, but it appears to change with the season rather than being a simple linear relationship.
+
+h)
+Correlation means two variables move together in some systematic way. 
+Causation means one variable directly influences or produces a change in the other.
+Correlation does not imply causation. Just because two things happen together does not mean one causes the other.
+Causation implies correlation. If X truly causes Y, we generally expect to see some kind of correlation between them.
+
+i,j and k)
+```{r}
+
+df_wide <- df_joined %>%
+  pivot_wider(names_from = component, values_from = value) #expand df_joined
+
+
+df_enc <- df_wide %>%
+  dummy_cols(select_columns = c("area"),
+             remove_selected_columns = TRUE, # drop original 'area
+             remove_first_dummy = FALSE) # keep all dummy columns
+
+num_cols <- df_enc %>% select(where(is.numeric)) %>% names() #keep only numeric cols
+num_predictors <- setdiff(num_cols, "avgTemp") #Target
+
+df_scaled <- df_enc %>%
+  mutate(across(all_of(num_predictors), ~ as.numeric(scale(.)))) #standard scale
+
+set.seed(123)  # for reproducibility
+n <- nrow(df_scaled) #number of rows
+idx_train <- sample.int(n, size = floor(0.75 * n)) #(total, 75%)
+
+train_df <- df_scaled[idx_train, ]
+test_df  <- df_scaled[-idx_train, ]
+
+####j
+train_df <- train_df %>%
+  select(avgTemp, PM2.5, PM10, starts_with("area_")) #keep only area and pollution
+
+test_df <- test_df %>%
+  select(avgTemp, PM2.5, PM10, starts_with("area_"))  #keep only area and pollution
+
+
+lm_model <- lm(avgTemp ~ PM2.5 + PM10 + area_Bergen + area_Drammen + area_Moss, data = train_df)
+
+summary(lm_model)#bigger p -> lower significance
+#Errors range roughly ±20 °C; median near 0 → model is centered but has wide spread.
+
+#Residual SE = 7.13 °C → typical error around 7°C.
+
+#R² = 0.091 (Adj. 0.087) → model explains ~9% of variance; weak predictive power.
+
+#F-test p < 2e-16 → as a group, predictors have nonzero explanatory power (large n makes this easy).
+
+####k
+
+needed <- setdiff(names(test_df), "avgTemp") #remove NA
+mask <- complete.cases(test_df[needed])
+
+preds <- predict(lm_model, newdata = test_df[mask, , drop = FALSE])
+y     <- test_df$avgTemp[mask]
+
+residuals <- y - preds
+RMSE <- sqrt(mean(residuals^2))
+MAE  <- mean(abs(residuals))
+R2   <- 1 - sum(residuals^2) / sum((y - mean(y))^2)
+
+cat("n used:", sum(mask), "of", nrow(test_df), "\n")
+cat("RMSE:", RMSE, "\nMAE:", MAE, "\nR²:", R2, "\n")
+
+#RMSE: On average, our model predictions are off by about 7.4 °C, with bigger mistakes penalized heavily
+#MSE: The average miss is about 5.9 °C
+#R2: Only 3% of the variance in avgTemp in the test set is explained by PM2.5, PM10, and area.
+
+#p-value (Pr(>|t|)): test of null hypothesis 
+
+#(Intercept) = 8.38 → expected avgTemp for the baseline area.
+
+#PM2.5 = -1.69 (p < 0.001) → holding everything else fixed, +1 unit PM2.5 associates with ~1.69°C lower avgTemp (statistically significant).
+
+#PM10 = -0.64 (p = 0.026) → +1 unit PM10 associates with ~0.64°C lower avgTemp (weak/moderate significance).
+
+#Area dummies shown are not significant vs the baseline (p ≫ 0.05)
+
+``` 
+
+
+Excercise 3)
+
+a) Linearity
+
+Meaning: The relationship between predictors x and response y is linear.
+
+Diagnosis: Plot residuals vs. fitted values (should show no pattern). Partial regression plots also help.
+
+b) Homoscedasticity (constant variance)
+
+Meaning: The variance of residuals is the same across all fitted values.
+
+Diagnosis: Plot residuals vs. fitted values. If spread increases or decreases (a funnel shape), heteroscedasticity is present. Use statistical tests like Breusch–Pagan or White’s test.
+
+c) Independence
+
+Meaning: Observations (and residuals) are independent from each other.
+
+Diagnosis: For time series, check autocorrelation plots (ACF) or Durbin–Watson test. For cross-sectional data, independence is usually assumed based on design.
+
+d) Normality
+
+Meaning: Residuals are normally distributed (important for inference, not prediction).
+
+Diagnosis: Histogram or Q–Q plot of residuals. Formal tests like Shapiro–Wilk or Kolmogorov–Smirnov can be used.
+
+
+
+```{r}
+set.seed(42)
+n <- 1000
+x <- 1:n
+
+# Changeable parameters
+# - Change the parameters to affect the generated data points below.
+# - You may copy this code multiple times to answer all the questions in the exercise.
+# - You may find it reasonable to argue for multiple violations from a single generated set of data points.
+
+contant <- 0
+trend <- 0
+curve_magnitue <- 0
+curve_period <- 100
+curve_shift <- 0
+normal_noise_magnitue <- 1
+norm_noise_periode <- 10000
+shift_norm_noise <- 500
+non_normal_noise_magnitue <- 0
+non_norm_noice_periode <- 10000
+shift_non_norm_noise <- 500
+
+# put y.gen into a function
+y_gen <- function(
+    contant, trend, curve_magnitue, curve_period,
+    curve_shift, normal_noise_magnitue, norm_noise_periode,
+    shift_norm_noise, non_normal_noise_magnitue,
+    non_norm_noice_periode, shift_non_norm_noise
+    ){
+  contant + trend * x +
+  curve_magnitue * sin((x/curve_period + curve_shift)*pi) + 
+  normal_noise_magnitue*cos((
+    x / norm_noise_periode + shift_norm_noise/norm_noise_periode)*pi
+    )*rnorm(n, sd = 3) +
+  non_normal_noise_magnitue*cos(
+    (x/non_norm_noice_periode + shift_non_norm_noise/non_norm_noice_periode)*pi
+  ) * rexp(n, rate = 0.2)
+  }
+
+```
+
+```{r}
+y.gen <- y_gen(contant, trend, curve_magnitue, curve_period,
+               curve_shift, normal_noise_magnitue, norm_noise_periode,
+               shift_norm_noise, non_normal_noise_magnitue,
+               non_norm_noice_periode, shift_non_norm_noise)
+
+p <- qplot(x, y.gen, ylab = "y") +
+  geom_point(size = 0.1) +
+  labs(title = "Data generate for linear regrestion")
+
+# Display the plot
+print(p)
+
+```
+
+```{r}
+# ---- A: All assumptions hold ----
+set.seed(1)
+
+contant <- 0
+trend <- 0.2                # linear trend
+curve_magnitue <- 0           # no curvature
+curve_period <- 100
+curve_shift <- 0
+normal_noise_magnitue <- 1
+norm_noise_periode <- 1e9     # ~constant variance (cos ~ 1)
+shift_norm_noise <- 0
+non_normal_noise_magnitue <- 0
+non_norm_noice_periode <- 1e9
+shift_non_norm_noise <- 0
+
+y.gen <- y_gen(
+  contant=contant, trend=trend, curve_magnitue=curve_magnitue, curve_period=curve_period,
+  curve_shift=curve_shift, normal_noise_magnitue=normal_noise_magnitue, norm_noise_periode=norm_noise_periode,
+  shift_norm_noise=shift_norm_noise, non_normal_noise_magnitue=non_normal_noise_magnitue,
+  non_norm_noice_periode=non_norm_noice_periode, shift_non_norm_noise=shift_non_norm_noise
+)
+
+qplot(x, y.gen) + geom_point(size=0.1) + labs(title="A) Data (assumptions hold)", y="y")
+lm.gen <- lm(y.gen ~ x)
+plot(lm.gen, which = 1)  # Residuals vs Fitted (should be patternless)
+plot(lm.gen, which = 2)  # Q-Q (close to line)
+plot(lm.gen, which = 3)  # Scale-Location (flat-ish)
+plot(lm.gen, which = 5)  # Leverage (no standout points)
+```
+
+```{r}
+# ---- B: Heteroscedasticity ----
+set.seed(2)
+
+contant <- 0
+trend <- 0.01
+curve_magnitue <- 0
+curve_period <- 100
+curve_shift <- 0
+normal_noise_magnitue <- 1
+norm_noise_periode <- 500      # variance oscillates strongly across x
+shift_norm_noise <- 0
+non_normal_noise_magnitue <- 0
+non_norm_noice_periode <- 1e9
+shift_non_norm_noise <- 0
+
+y.gen <- y_gen(
+  contant=contant, trend=trend, curve_magnitue=curve_magnitue, curve_period=curve_period,
+  curve_shift=curve_shift, normal_noise_magnitue=normal_noise_magnitue, norm_noise_periode=norm_noise_periode,
+  shift_norm_noise=shift_norm_noise, non_normal_noise_magnitue=non_normal_noise_magnitue,
+  non_norm_noice_periode=non_norm_noice_periode, shift_non_norm_noise=shift_non_norm_noise
+)
+
+qplot(x, y.gen) + geom_point(size=0.1) + labs(title="B) Data (heteroscedastic)", y="y")
+lm.gen <- lm(y.gen ~ x)
+plot(lm.gen, which = 1)  # Residuals vs Fitted: changing spread (violates homoscedasticity)
+plot(lm.gen, which = 2)  # Q-Q
+plot(lm.gen, which = 3)  # Scale-Location: upward/downward pattern (non-constant variance)
+plot(lm.gen, which = 5)  # Leverage
+
+```
+
+```{r}
+# ---- C: Nonlinearity ----
+set.seed(3)
+
+contant <- 0
+trend <- 0.0                  # keep linear part minimal to expose curvature
+curve_magnitue <- 20          # visible curvature
+curve_period <- 100           # periodic curve in mean
+curve_shift <- 0
+normal_noise_magnitue <- 1
+norm_noise_periode <- 1e9     # ~constant variance to isolate nonlinearity
+shift_norm_noise <- 0
+non_normal_noise_magnitue <- 0
+non_norm_noice_periode <- 1e9
+shift_non_norm_noise <- 0
+
+y.gen <- y_gen(
+  contant=contant, trend=trend, curve_magnitue=curve_magnitue, curve_period=curve_period,
+  curve_shift=curve_shift, normal_noise_magnitue=normal_noise_magnitue, norm_noise_periode=norm_noise_periode,
+  shift_norm_noise=shift_norm_noise, non_normal_noise_magnitue=non_normal_noise_magnitue,
+  non_norm_noice_periode=non_norm_noice_periode, shift_non_norm_noise=shift_non_norm_noise
+)
+
+qplot(x, y.gen) + geom_point(size=0.1) + labs(title="C) Data (nonlinear mean)", y="y")
+lm.gen <- lm(y.gen ~ x)
+plot(lm.gen, which = 1)  # Residuals vs Fitted: curved pattern (violates linearity)
+plot(lm.gen, which = 2)  # Q-Q
+plot(lm.gen, which = 3)  # Scale-Location
+plot(lm.gen, which = 5)  # Leverage
+
+```
+
+```{r}
+# ---- D: Non-normal residuals ----
+set.seed(4)
+
+contant <- 0
+trend <- 0.01
+curve_magnitue <- 0
+curve_period <- 100
+curve_shift <- 0
+normal_noise_magnitue <- 0     # turn off normal part to isolate non-normality
+norm_noise_periode <- 1e9
+shift_norm_noise <- 0
+non_normal_noise_magnitue <- 1 # exponential noise component on
+non_norm_noice_periode <- 1e9  # ~constant scale
+shift_non_norm_noise <- 0
+
+y.gen <- y_gen(
+  contant=contant, trend=trend, curve_magnitue=curve_magnitue, curve_period=curve_period,
+  curve_shift=curve_shift, normal_noise_magnitue=normal_noise_magnitue, norm_noise_periode=norm_noise_periode,
+  shift_norm_noise=shift_norm_noise, non_normal_noise_magnitue=non_normal_noise_magnitue,
+  non_norm_noice_periode=non_norm_noice_periode, shift_non_norm_noise=shift_non_norm_noise
+)
+
+qplot(x, y.gen) + geom_point(size=0.1) + labs(title="D) Data (non-normal errors)", y="y")
+lm.gen <- lm(y.gen ~ x)
+plot(lm.gen, which = 1)  # Residuals vs Fitted
+plot(lm.gen, which = 2)  # Q-Q: systematic deviations (skew/heavy tails)
+plot(lm.gen, which = 3)  # Scale-Location
+plot(lm.gen, which = 5)  # Leverage
+
+```
+
+a) Linearity violated
+
+What it means: The conditional mean 
+𝐸[𝑌∣𝑋]E[Y∣X] isn’t a straight line in 𝑋.
+In the generator: A curved mean like a sinusoid breaks linearity 
+(e.g., curve_magnitue > 0 so 𝑌=𝛽0+𝛽𝑋+𝐴sin⁡(⋅)+𝜀Y=β0	​+β1	​X+Asin(⋅)+ε).
+
+What we see: Residuals vs Fitted shows a systematic curve/wave (not a random cloud around 0). 
+The linear fit is biased because it tries to force a line through a curved signal.
+
+b) Homoscedasticity violated
+
+What it means: The error variance changes with 𝑋 (heteroscedasticity).
+
+In the generator: Make the noise scale depend on 𝑋 
+(e.g., cosine envelope via norm_noise_periode/shift_norm_noise,
+ so the spread oscillates with 𝑥).
+
+What we see: Residuals vs Fitted (and Scale–Location) show changing spread—funnel shapes or periodic widening/narrowing. Coefficient SEs become unreliable unless you use robust SEs or model the variance.
+
+c) Independence violated
+
+What it means: Errors are correlated across observations (common with time index 
+𝑥=1:𝑛x=1:n).
+
+In the data: If errors contain persistence/seasonality 
+(e.g., any serial pattern in the noise term), 
+residuals at nearby 𝑥 x are autocorrelated.
+
+What we see: Residuals vs Fitted may show runs; an ACF of residuals has significant lags; Durbin–Watson deviates from ~2. Consequence: SEs are understated and tests overstate significance. (OLS estimates remain unbiased if regressors are exogenous but are inefficient.)
+
+d) Normality violated
+
+What it means: Error distribution isn’t normal (e.g., skewed or heavy‐tailed).
+
+In the generator: Turn on the exponential component (non_normal_noise_magnitue > 0) or any heavy‐tailed noise.
+
+What we see: Q–Q plot deviates from the diagonal: bowed tails (heavy tails), or systematic curvature (skew). Histograms show skew/kurtosis. OLS coefficients are still unbiased/consistent, but t/F inference can be off for small samples (robust or bootstrap SEs help).
+
+
+Excercise 4
+
+a)
+
+Correlation measures the strength and direction of a linear relationship between two random variables.
+It is a normalized value that always lies between -1 and +1.
+
+Covariance measures how two variables vary together.
+- Positive covariance: as X increase, Y tends to increase.
+- Negative covariance: as X increase, Y tends to decrease.
+
+
+Correlation is a scaled version of covariance, 
+making it easier to interpret strength and relationships between two random variables.
+
+b)
+
+```{r include-photo-b1, echo=FALSE, out.width="70%", fig.cap="Site overview", fig.align="center"}
+knitr::include_graphics("4b1.png")
+```
+
+```{r include-photo-b2, echo=FALSE, out.width="70%", fig.cap="Site overview", fig.align="center"}
+knitr::include_graphics("4b2.png")
+```
+c)
+
+Comments on the first equation: 
+- If you multiply X by a positive number, the correlation to Y doesn't change.
+- If you multiply X with a negative number, the direction flips. 
+
+So correlation doesn't care about the scale of measurments, only about the direction of the relationship.
+
+Comments on the second equation:
+- If you add a constant to all values of X, the correlation with Y is unchanged.
+
+Correlation ignores constant shifts, it only cares about how variablies vary together.
+
+So in the big picture, Correlation only depends on the pattern of variation between two variables, not on the units or the baseline.
+Scaling can flip the sign, but otherwise, it stays the same.
+
+d)
+
+Left side: correlation between x and y when z variable is controlled.
+
+Right side: 
+- numerator: correlation between x and y minus correlation_xz*correlationy_y<.
+So we subtract the indirect correlation between X and Y that comes from both being related to Z.
+
+-denominator: normalizes so result is between -1 and +1. 
+
+- p_xy given z = 0: no link between X and Y once we control Z.
+- p_xy given z > 0: positive correlation
+- p_xy given z < 0 : negative correlation
+
+So partial correlation measures the true direct link between two variables while filtering out the influnce of a third.
+
+
+Three examples where partial correlation is useful:
+
+1. 
+X = Education level
+Y = Income
+Z = Age 
+Education and income positively correlated, but older people have more education and higher income.
+
+2. 
+X = Hours of exercise per week
+Y = Body weight
+Z = Daily calorie intake
+
+More exercise might correlate weakly with lower body weight, but people who exercise more may also eat more calories.
+
+3. 
+
+X = Season (autumn vs. winter)
+Y = Presentation quality (bad vs. good)
+Z = Exposure to more presentations from other students
+
+Without controlling for Z, it could look like:
+Presentations are “worse” in fall and “better” in winter. 
+Maybe we blame laziness from the summer, is there a Christmas magic force?
+
+But when we control for Z, how many presentations students have already seen, we might find:
+
+Presentation quality improves simply because students learn by watching more classmates present earlier in the semester.
+
+The seasonal effect disappears, so there is no real Christmas force. 
+
+e)
+```{r include-photo-e1, echo=FALSE, out.width="70%", fig.cap="Site overview", fig.align="center"}
+knitr::include_graphics("4e1.png")
+```
+
+```{r include-photo-e2, echo=FALSE, out.width="70%", fig.cap="Site overview", fig.align="center"}
+knitr::include_graphics("4e2.png")
+```
+
+```{r include-photo-e3, echo=FALSE, out.width="70%", fig.cap="Site overview", fig.align="center"}
+knitr::include_graphics("4e3.png")
+```
+
+
+f)
+1. 
+
+If you rescale X by a positive number, the partial correlation with Y (after controlling for Z) doesn't change.
+If you flip the scale with a negative number , then the direction of the relationship flips, 
+but the strength stays the same.
+
+Changing the units or orientation of X doesn't affect the relationship's strength, only its sign if you flip the axis.
+
+2. 
+If you shift X by adding a constant, the partial correlation with Y is unchanged.
+
+This is because correlation only cares about how variables vary together, not about their absolute levels.
+
+Adding a constant to X doesn't change how it co-moves with Y once Z is accounted for.
+
+3. 
+If you rescale Z, the result is the same.
+
+Even flipping it only changes direction for Z itself, but the controlled relationship between X and Y remains identical.
+
+The variable you control for works the same no matter how it's scaled — 
+correlation between X and Y after removing Z's influence is unaffected

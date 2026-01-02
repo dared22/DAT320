@@ -1,0 +1,186 @@
+setwd("/Users/pasha/Desktop/DAT320/CA1")
+data <- read.csv2("temperature_data.csv")
+#####a
+head(data)
+
+typeof(data$area)
+data$area <- as.factor(data$area)
+data$station <- as.factor(data$station)
+data$date <- as.Date(as.POSIXct(data$dateTime, format = "%d.%m.%Y"))
+data <- subset(data, select = -dateTime)
+data$avgTemp <- as.double(data$avgTemp)
+
+head(data)
+#####b
+
+stats <- data %>%
+  filter(!is.na(avgTemp)) %>%
+  group_by(area) %>%
+  summarise(
+    mean   = mean(avgTemp, na.rm = TRUE),
+    sd     = sd(avgTemp, na.rm = TRUE),
+    median = median(avgTemp, na.rm = TRUE),
+    min    = min(avgTemp, na.rm = TRUE),
+    max    = max(avgTemp, na.rm = TRUE),
+    .groups = "drop"
+  )
+stats #The mean temp in Bergen, Drammen, Moss and Oslo is almost the same, 
+#however mean temp in Tromso is much lower which makes sense. Same could be said 
+#about median. Max temp is almost identical in everywhere. And min temp is much
+#lower in Tromso obviously, and a bit higher in bergen as it is near the coast.
+
+####c
+ggplot(data, aes(x = date, y = avgTemp, color = area, group = area)) +
+  geom_line() +
+  labs(title = "avgTemp", x = "Date", y = "Temperature (°C)") +
+  theme_minimal() #seems like there is no missing data, and the values for Oslo
+#Moss and Drammen are pretty much the same, while Bergen is a little higher and 
+#Tromso is a little lower. There is smaller variation in temp in Bergen, than other
+#places so std makes sense aswell.
+
+####d
+ggplot(data, aes(x = avgTemp, fill = area)) +
+  geom_density(alpha = 0.4) +
+  labs(title = "Temperature Distribution by Area",
+       x = "Temperature (°C)", y = "Density") +
+  theme_minimal()#Bergen looks like normal distribution Tromso and Moss
+#has a potential double top but also looks like normal. Drammen and oslo has tripple
+#tops for some reason, but also alomost normal dist. They are alsmost symmetrical
+
+####e
+library(dplyr)
+
+# ensure both have Date type
+data$date <- as.Date(data$date)  # or: as.Date(data$dateTime, format = "%d.%m.%Y")
+polution_data$date <- as.Date(substr(polution_data$dateTime, 1, 10))
+
+# join on BOTH keys
+df_joined <- inner_join(
+  data,
+  polution_data,
+  by = c("area", "date")
+)
+
+
+head(df_joined)
+
+######f
+
+df_bergen <- df_joined %>%
+  filter(area == "Bergen") %>%
+  group_by(date, component) %>%
+  summarise(value = mean(value, na.rm = TRUE),
+            avgTemp = mean(avgTemp, na.rm = TRUE),
+            .groups = "drop")
+
+head(df_bergen)
+
+ggplot(df_bergen, aes(x = date)) +
+  geom_line(aes(y = avgTemp, color = "Temperature"), linewidth = 1) +
+  geom_line(aes(y = value,   color = component),  linewidth = 1) +
+  labs(title = "Bergen: Temperature and Pollution",
+       x = "Date", y = "Value") +
+  scale_color_manual(values = c("Temperature" = "blue", "PM10" = "red", "PM2.5" = "darkgreen"),
+                     name = "Series") +
+  theme_minimal()
+######g
+#looks like the polutions are correlating with eachother, but not so much with temp.
+#####h
+#Correlation = two variables move together (an association).
+#Causation = changing X produces a change in Y
+#Correlation does not imply causation? Does causation imply correlation? yes.
+
+######i
+install.packages("fastDummies")
+library(fastDummies)
+df_enc <- df_joined %>%
+  dummy_cols(select_columns = "component",
+             remove_selected_columns = TRUE,   # drop original 'component'
+             remove_first_dummy = FALSE)       # keep both PM2.5 and PM10 dummies
+
+# 2) Standard-scale continuous features (add *_z columns)
+#    (dummies stay 0/1; no need to scale them)
+df_scaled <- df_enc %>%
+  mutate(
+    value_z   = as.numeric(scale(value)),
+    avgTemp_z = as.numeric(scale(avgTemp))
+  )
+
+# 3) 75/25 random train-test split
+set.seed(123)  # for reproducibility
+n   <- nrow(df_scaled)
+idx <- sample.int(n, size = floor(0.75 * n))
+
+train <- df_scaled[idx, , drop = FALSE]
+test  <- df_scaled[-idx, , drop = FALSE]
+
+# Quick sanity checks
+head(train); head(test)
+colnames(df_scaled)  # should include component_PM2.5 and component_PM10
+######j
+
+
+library(dplyr)
+library(tidyr)
+library(fastDummies)
+
+# 1) Make wide data: one row per (area, date) with PM2.5 and PM10 columns
+df_wide <- df_joined %>%
+  select(area, date, component, value, avgTemp) %>%
+  pivot_wider(names_from = component, values_from = value) %>%
+  # keep rows where both pollutants exist
+  filter(!is.na(`PM2.5`), !is.na(PM10))
+
+# 2) One-hot encode area (drop one level to avoid perfect multicollinearity)
+df_model <- df_wide %>%
+  dummy_cols(select_columns = "area",
+             remove_selected_columns = TRUE,
+             remove_first_dummy = TRUE)
+
+# (Optional) standardize the two pollutant predictors
+df_model <- df_model %>%
+  mutate(PM2.5_z = as.numeric(scale(`PM2.5`)),
+         PM10_z  = as.numeric(scale(PM10)))
+
+# 3) Train/test split (75/25)
+set.seed(123)
+n   <- nrow(df_model)
+idx <- sample.int(n, floor(0.75 * n))
+train <- df_model[idx, ]
+test  <- df_model[-idx, ]
+
+# 4) Build formula: avgTemp ~ PM2.5 + PM10 + area dummies (use z-scales if you prefer)
+area_terms <- grep("^area_", names(train), value = TRUE)
+f <- as.formula(
+  paste("avgTemp ~ PM2.5_z + PM10_z +", paste(area_terms, collapse = " + "))
+)
+
+# 5) Fit linear regression
+m <- lm(f, data = train)
+summary(m)
+
+# 6) Test performance
+pred <- predict(m, newdata = test)
+rmse <- sqrt(mean((pred - test$avgTemp)^2, na.rm = TRUE))
+mae  <- mean(abs(pred - test$avgTemp), na.rm = TRUE)
+sd_y <- sd(test$avgTemp, na.rm = TRUE)
+c(RMSE = rmse, MAE = mae, SD_of_y = sd_y, R2_test = 1 - var(pred - test$avgTemp, na.rm = TRUE)/var(test$avgTemp, na.rm = TRUE))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,917 @@
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+\documentclass[
+]{article}
+\usepackage{xcolor}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb}
+\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math} % this also loads fontspec
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+\usepackage{lmodern}
+\ifPDFTeX\else
+  % xetex/luatex font selection
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{color}
+\usepackage{fancyvrb}
+\newcommand{\VerbBar}{|}
+\newcommand{\VERB}{\Verb[commandchars=\\\{\}]}
+\DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\}}
+% Add ',fontsize=\small' for more characters per line
+\usepackage{framed}
+\definecolor{shadecolor}{RGB}{248,248,248}
+\newenvironment{Shaded}{\begin{snugshade}}{\end{snugshade}}
+\newcommand{\AlertTok}[1]{\textcolor[rgb]{0.94,0.16,0.16}{#1}}
+\newcommand{\AnnotationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\AttributeTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{#1}}
+\newcommand{\BaseNTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\BuiltInTok}[1]{#1}
+\newcommand{\CharTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\CommentTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\CommentVarTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ConstantTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{#1}}
+\newcommand{\ControlFlowTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\DataTypeTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{#1}}
+\newcommand{\DecValTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\DocumentationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ErrorTok}[1]{\textcolor[rgb]{0.64,0.00,0.00}{\textbf{#1}}}
+\newcommand{\ExtensionTok}[1]{#1}
+\newcommand{\FloatTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\FunctionTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\ImportTok}[1]{#1}
+\newcommand{\InformationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\KeywordTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\NormalTok}[1]{#1}
+\newcommand{\OperatorTok}[1]{\textcolor[rgb]{0.81,0.36,0.00}{\textbf{#1}}}
+\newcommand{\OtherTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{#1}}
+\newcommand{\PreprocessorTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\RegionMarkerTok}[1]{#1}
+\newcommand{\SpecialCharTok}[1]{\textcolor[rgb]{0.81,0.36,0.00}{\textbf{#1}}}
+\newcommand{\SpecialStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\StringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\VariableTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\VerbatimStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\WarningTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\usepackage{graphicx}
+\makeatletter
+\newsavebox\pandoc@box
+\newcommand*\pandocbounded[1]{% scales image to fit in text height/width
+  \sbox\pandoc@box{#1}%
+  \Gscale@div\@tempa{\textheight}{\dimexpr\ht\pandoc@box+\dp\pandoc@box\relax}%
+  \Gscale@div\@tempb{\linewidth}{\wd\pandoc@box}%
+  \ifdim\@tempb\p@<\@tempa\p@\let\@tempa\@tempb\fi% select the smaller of both
+  \ifdim\@tempa\p@<\p@\scalebox{\@tempa}{\usebox\pandoc@box}%
+  \else\usebox{\pandoc@box}%
+  \fi%
+}
+% Set default figure placement to htbp
+\def\fps@figure{htbp}
+\makeatother
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\usepackage{bookmark}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\urlstyle{same}
+\hypersetup{
+  pdftitle={CA4},
+  pdfauthor={Pavel Gulin, Erling Mysen, Kristian Røhne},
+  hidelinks,
+  pdfcreator={LaTeX via pandoc}}
+
+\title{CA4}
+\author{Pavel Gulin, Erling Mysen, Kristian Røhne}
+\date{2025-11-23}
+
+\begin{document}
+\maketitle
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\#1 a)}
+\FunctionTok{library}\NormalTok{(tidyverse)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## -- Attaching core tidyverse packages ------------------------ tidyverse 2.0.0 --
+## v dplyr     1.1.4     v readr     2.1.5
+## v forcats   1.0.0     v stringr   1.5.2
+## v ggplot2   3.5.2     v tibble    3.3.0
+## v lubridate 1.9.4     v tidyr     1.3.1
+## v purrr     1.1.0     
+## -- Conflicts ------------------------------------------ tidyverse_conflicts() --
+## x dplyr::filter() masks stats::filter()
+## x dplyr::lag()    masks stats::lag()
+## i Use the conflicted package (<http://conflicted.r-lib.org/>) to force all conflicts to become errors
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# load both datasets one is the first five keywords (Python, Java, Typescript, Interest Rates, Regulation) worldwide}
+\CommentTok{\#Second one is (Volatility, NHL, Ice Skates, Sports Training) \#here ice hockey is seasonal}
+\NormalTok{df1 }\OtherTok{\textless{}{-}} \FunctionTok{read\_csv}\NormalTok{(}\StringTok{"multiTimeline.csv"}\NormalTok{, }\AttributeTok{skip =} \DecValTok{2}\NormalTok{) }\CommentTok{\#first two rows are just text from google trends and empty column. }
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Rows: 262 Columns: 6
+## -- Column specification --------------------------------------------------------
+## Delimiter: ","
+## dbl  (5): Python: (Worldwide), Java: (Worldwide), TypeScript: (Worldwide), I...
+## date (1): Week
+## 
+## i Use `spec()` to retrieve the full column specification for this data.
+## i Specify the column types or set `show_col_types = FALSE` to quiet this message.
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{df2 }\OtherTok{\textless{}{-}} \FunctionTok{read\_csv}\NormalTok{(}\StringTok{"multiTimeline2.csv"}\NormalTok{, }\AttributeTok{skip =} \DecValTok{2}\NormalTok{) }
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Rows: 262 Columns: 5
+## -- Column specification --------------------------------------------------------
+## Delimiter: ","
+## dbl  (4): Volatility: (Worldwide), National Hockey League: (Worldwide), Ice ...
+## date (1): Week
+## 
+## i Use `spec()` to retrieve the full column specification for this data.
+## i Specify the column types or set `show_col_types = FALSE` to quiet this message.
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{df1 }\OtherTok{\textless{}{-}}\NormalTok{ df1 }\SpecialCharTok{\%\textgreater{}\%} \FunctionTok{rename}\NormalTok{(}\AttributeTok{date =} \DecValTok{1}\NormalTok{)}
+\NormalTok{df2 }\OtherTok{\textless{}{-}}\NormalTok{ df2 }\SpecialCharTok{\%\textgreater{}\%} \FunctionTok{rename}\NormalTok{(}\AttributeTok{date =} \DecValTok{1}\NormalTok{)}
+
+\CommentTok{\# convert to date}
+\NormalTok{df1}\SpecialCharTok{$}\NormalTok{date }\OtherTok{\textless{}{-}} \FunctionTok{as.Date}\NormalTok{(df1}\SpecialCharTok{$}\NormalTok{date)}
+\NormalTok{df2}\SpecialCharTok{$}\NormalTok{date }\OtherTok{\textless{}{-}} \FunctionTok{as.Date}\NormalTok{(df2}\SpecialCharTok{$}\NormalTok{date)}
+
+\CommentTok{\# full join to combine all dates}
+\NormalTok{df }\OtherTok{\textless{}{-}} \FunctionTok{full\_join}\NormalTok{(df1, df2, }\AttributeTok{by =} \StringTok{"date"}\NormalTok{) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{arrange}\NormalTok{(date)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{df\_clean }\OtherTok{\textless{}{-}}\NormalTok{ df }\SpecialCharTok{\%\textgreater{}\%} \CommentTok{\#a lot of wired values in the google dataset}
+  \FunctionTok{mutate}\NormalTok{(}\FunctionTok{across}\NormalTok{(}
+    \AttributeTok{.cols =} \SpecialCharTok{{-}}\NormalTok{date,}
+    \AttributeTok{.fns =} \SpecialCharTok{\textasciitilde{}}\NormalTok{ \{}
+\NormalTok{      x }\OtherTok{\textless{}{-}} \FunctionTok{str\_trim}\NormalTok{(.x)}
+\NormalTok{      x }\OtherTok{\textless{}{-}} \FunctionTok{str\_replace\_all}\NormalTok{(x, }\StringTok{"\textless{}1"}\NormalTok{, }\StringTok{"0"}\NormalTok{)}
+\NormalTok{      x }\OtherTok{\textless{}{-}} \FunctionTok{str\_replace\_all}\NormalTok{(x, }\StringTok{"{-}{-}"}\NormalTok{, }\StringTok{"0"}\NormalTok{)}
+\NormalTok{      x }\OtherTok{\textless{}{-}} \FunctionTok{as.numeric}\NormalTok{(x)}
+\NormalTok{      x[}\FunctionTok{is.na}\NormalTok{(x)] }\OtherTok{\textless{}{-}} \DecValTok{0}   \CommentTok{\# remove NA }
+\NormalTok{      x}
+\NormalTok{    \}}
+\NormalTok{  ))}
+
+\FunctionTok{names}\NormalTok{(df\_clean) }\OtherTok{\textless{}{-}} \FunctionTok{names}\NormalTok{(df\_clean) }\SpecialCharTok{|\textgreater{}} \CommentTok{\#remove the "(Worldwide)" after each keyword }
+  \FunctionTok{str\_replace}\NormalTok{(}\StringTok{": }\SpecialCharTok{\textbackslash{}\textbackslash{}}\StringTok{(Worldwide}\SpecialCharTok{\textbackslash{}\textbackslash{}}\StringTok{)"}\NormalTok{, }\StringTok{""}\NormalTok{) }\SpecialCharTok{|\textgreater{}} 
+  \FunctionTok{str\_trim}\NormalTok{()}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{df\_long }\OtherTok{\textless{}{-}}\NormalTok{ df\_clean }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{pivot\_longer}\NormalTok{(}
+    \AttributeTok{cols =} \SpecialCharTok{{-}}\NormalTok{date,}
+    \AttributeTok{names\_to =} \StringTok{"keyword"}\NormalTok{,}
+    \AttributeTok{values\_to =} \StringTok{"value"}
+\NormalTok{  )}
+
+\FunctionTok{ggplot}\NormalTok{(df\_long, }\FunctionTok{aes}\NormalTok{(date, value)) }\SpecialCharTok{+}
+  \FunctionTok{geom\_line}\NormalTok{(}\AttributeTok{color =} \StringTok{"steelblue"}\NormalTok{) }\SpecialCharTok{+}
+  \FunctionTok{facet\_wrap}\NormalTok{(}\SpecialCharTok{\textasciitilde{}}\NormalTok{ keyword, }\AttributeTok{scales =} \StringTok{"free\_y"}\NormalTok{) }\SpecialCharTok{+}
+  \FunctionTok{theme\_minimal}\NormalTok{(}\AttributeTok{base\_size =} \DecValTok{14}\NormalTok{) }\SpecialCharTok{+}
+  \FunctionTok{labs}\NormalTok{(}
+    \AttributeTok{title =} \StringTok{"Google Trends by Keyword"}\NormalTok{,}
+    \AttributeTok{x =} \StringTok{"Date"}\NormalTok{,}
+    \AttributeTok{y =} \StringTok{"Interest"}
+\NormalTok{  )}
+\end{Highlighting}
+\end{Shaded}
+
+\pandocbounded{\includegraphics[keepaspectratio]{CA4_files/figure-latex/Exercise 1 b}}-1.pdf)
+Here we see that the keywords in the same groups somewhat correlate
+between each other. Especially the Ice Skate and NHL keywords. Which is
+expected as Ice hockey is a seasonal sport. We can also observe that
+there is a spike in interest for Regulation, Interest Rate and
+Volatility in 2025, which also makes sense as all three keywords are
+related to finance. And the spike might have something to do with the
+Trumps tariffs and it's impacts on the market. Programming languages
+also correlate somewhat, but in a less degree than other keyword.
+However we can see that there is a clear downward sloping trend for all
+three with a sharp fall in the end of 2025.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{ggplot}\NormalTok{(df\_long, }\FunctionTok{aes}\NormalTok{(keyword, value, }\AttributeTok{fill =}\NormalTok{ keyword)) }\SpecialCharTok{+}
+  \FunctionTok{geom\_violin}\NormalTok{(}\AttributeTok{alpha =} \FloatTok{0.6}\NormalTok{) }\SpecialCharTok{+}
+  \FunctionTok{geom\_boxplot}\NormalTok{(}\AttributeTok{width =} \FloatTok{0.15}\NormalTok{, }\AttributeTok{color =} \StringTok{"black"}\NormalTok{, }\AttributeTok{alpha =} \FloatTok{0.8}\NormalTok{) }\SpecialCharTok{+}
+  \FunctionTok{theme\_minimal}\NormalTok{(}\AttributeTok{base\_size =} \DecValTok{14}\NormalTok{) }\SpecialCharTok{+}
+  \FunctionTok{labs}\NormalTok{(}
+    \AttributeTok{title =} \StringTok{"Distribution of Google Trends Values"}\NormalTok{,}
+    \AttributeTok{x =} \StringTok{""}\NormalTok{,}
+    \AttributeTok{y =} \StringTok{"Search Interest"}
+\NormalTok{  ) }\SpecialCharTok{+}
+  \FunctionTok{theme}\NormalTok{(}\AttributeTok{legend.position =} \StringTok{"none"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\pandocbounded{\includegraphics[keepaspectratio]{CA4_files/figure-latex/unnamed-chunk-3-1.pdf}}
+The distributions reveal clear differences in search behaviour across
+the selected keywords. Python, Java, and the National Hockey League show
+the highest overall interest, with large medians and wide interquartile
+ranges, reflecting their strong and sustained global popularity. These
+variables also display long right-tails, indicating periodic spikes in
+attention driven by events such as software news cycles or the ice
+hockey season. In contrast, Ice hockey, Interest rate, and Regulation
+exhibit moderate medians but greater irregularity, with frequent
+mid-sized spikes corresponding to seasonal sports activity or major
+economic and policy announcements. Finally, TypeScript, Ice skate, and
+Volatility have notably low medians and very narrow distributions,
+suggesting niche or highly specialized interest with only occasional
+increases in activity. Overall, the distributions separate cleanly into
+high-volume stable topics, event-driven mid-range topics, and
+consistently low-interest niche topics.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{library}\NormalTok{(forecast)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Registered S3 method overwritten by 'quantmod':
+##   method            from
+##   as.zoo.data.frame zoo
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{library}\NormalTok{(gridExtra)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## 
+## Attaching package: 'gridExtra'
+\end{verbatim}
+
+\begin{verbatim}
+## The following object is masked from 'package:dplyr':
+## 
+##     combine
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# 3 years of weekly data}
+\NormalTok{lags }\OtherTok{\textless{}{-}} \DecValTok{52} \SpecialCharTok{*} \DecValTok{3}   
+
+\CommentTok{\#ACF plots}
+\NormalTok{acf\_plots }\OtherTok{\textless{}{-}}\NormalTok{ df\_long }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{group\_by}\NormalTok{(keyword) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{summarise}\NormalTok{(}\AttributeTok{ts =} \FunctionTok{list}\NormalTok{(}\FunctionTok{ts}\NormalTok{(value, }\AttributeTok{frequency =} \DecValTok{52}\NormalTok{))) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{mutate}\NormalTok{(}\AttributeTok{plot =} \FunctionTok{map2}\NormalTok{(ts, keyword, }\SpecialCharTok{\textasciitilde{}}\NormalTok{\{}
+    \FunctionTok{ggAcf}\NormalTok{(.x, }\AttributeTok{lag.max =}\NormalTok{ lags) }\SpecialCharTok{+} 
+      \FunctionTok{ggtitle}\NormalTok{(}\FunctionTok{paste}\NormalTok{(}\StringTok{"ACF {-}"}\NormalTok{, .y)) }\SpecialCharTok{+}
+      \FunctionTok{theme\_minimal}\NormalTok{()}
+\NormalTok{  \}))}
+
+\FunctionTok{do.call}\NormalTok{(}\StringTok{"grid.arrange"}\NormalTok{, }\FunctionTok{c}\NormalTok{(acf\_plots}\SpecialCharTok{$}\NormalTok{plot, }\AttributeTok{ncol =} \DecValTok{3}\NormalTok{))}
+\end{Highlighting}
+\end{Shaded}
+
+\pandocbounded{\includegraphics[keepaspectratio]{CA4_files/figure-latex/Exercise 1 c}}-1.pdf)
+The ACF plots show three distinct behavioral patterns across the nine
+time series. Ice hockey, Ice skate, and National Hockey League all
+exhibit strong, repeating peaks at regular intervals (around 52, 104,
+and 156 weeks), indicating clear annual seasonality driven by the winter
+sports cycle. Python, Java, and to a weaker extent TypeScript display
+persistent autocorrelation that decays slowly, consistent with long-term
+stable interest in programming languages and gradual trends rather than
+sharp seasonal effects. In contrast, Interest rate, Regulation, and
+Volatility show rapidly decaying autocorrelation, suggesting short-lived
+shocks tied to economic or policy events with limited long-term
+persistence. Overall, the ACFs cleanly separate the series into highly
+seasonal (sports), trend-persistent (programming), and event-driven
+(financial regulation) categories.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{pacf\_plots }\OtherTok{\textless{}{-}}\NormalTok{ df\_long }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{group\_by}\NormalTok{(keyword) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{summarise}\NormalTok{(}\AttributeTok{ts =} \FunctionTok{list}\NormalTok{(}\FunctionTok{ts}\NormalTok{(value, }\AttributeTok{frequency =} \DecValTok{52}\NormalTok{))) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{mutate}\NormalTok{(}\AttributeTok{plot =} \FunctionTok{map2}\NormalTok{(ts, keyword, }\SpecialCharTok{\textasciitilde{}}\NormalTok{\{}
+    \FunctionTok{ggPacf}\NormalTok{(.x, }\AttributeTok{lag.max =}\NormalTok{ lags) }\SpecialCharTok{+} 
+      \FunctionTok{ggtitle}\NormalTok{(}\FunctionTok{paste}\NormalTok{(}\StringTok{"PACF {-}"}\NormalTok{, .y)) }\SpecialCharTok{+}
+      \FunctionTok{theme\_minimal}\NormalTok{()}
+\NormalTok{  \}))}
+
+\FunctionTok{do.call}\NormalTok{(}\StringTok{"grid.arrange"}\NormalTok{, }\FunctionTok{c}\NormalTok{(pacf\_plots}\SpecialCharTok{$}\NormalTok{plot, }\AttributeTok{ncol =} \DecValTok{3}\NormalTok{))}
+\end{Highlighting}
+\end{Shaded}
+
+\pandocbounded{\includegraphics[keepaspectratio]{CA4_files/figure-latex/Exercise 1c}}-1.pdf)
+Across all nine series, the PACF plots show a dominant lag-1 spike,
+indicating that each time series is mainly driven by short-term
+dependence. Beyond lag 1, partial autocorrelations drop quickly toward
+zero for every keyword. The sports-related series (Ice hockey, Ice
+skate, NHL) show only weak seasonal signals at longer lags, confirming
+that their strong annual patterns in the ACF come from smooth
+seasonality rather than higher-order AR structure. The programming
+languages (Python, Java, TypeScript) similarly behave like low-order AR
+processes with persistence driven mostly by trends. The financial terms
+(Interest rate, Regulation, Volatility) show almost no significant
+partial autocorrelation past lag 1, reflecting short-lived, event-driven
+shocks. Overall, the PACF indicates minimal higher-order autoregressive
+structure across all groups.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{library}\NormalTok{(dtw)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Loading required package: proxy
+\end{verbatim}
+
+\begin{verbatim}
+## 
+## Attaching package: 'proxy'
+\end{verbatim}
+
+\begin{verbatim}
+## The following objects are masked from 'package:stats':
+## 
+##     as.dist, dist
+\end{verbatim}
+
+\begin{verbatim}
+## The following object is masked from 'package:base':
+## 
+##     as.matrix
+\end{verbatim}
+
+\begin{verbatim}
+## Loaded dtw v1.23-1. See ?dtw for help, citation("dtw") for use in publication.
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{library}\NormalTok{(pheatmap)}
+
+\NormalTok{ts\_mat }\OtherTok{\textless{}{-}}\NormalTok{ df\_clean }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{select}\NormalTok{(}\SpecialCharTok{{-}}\NormalTok{date) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{as.matrix}\NormalTok{()}
+
+\NormalTok{ts\_mat }\OtherTok{\textless{}{-}}\NormalTok{ df\_clean }\SpecialCharTok{\%\textgreater{}\%} \FunctionTok{select}\NormalTok{(}\SpecialCharTok{{-}}\NormalTok{date) }\SpecialCharTok{\%\textgreater{}\%} \FunctionTok{as.matrix}\NormalTok{() }\CommentTok{\#simple point{-}wise difference, ignores temporal shifts.}
+\NormalTok{dist\_euclid }\OtherTok{\textless{}{-}} \FunctionTok{dist}\NormalTok{(}\FunctionTok{t}\NormalTok{(ts\_mat), }\AttributeTok{method =} \StringTok{"euclidean"}\NormalTok{)}
+
+\NormalTok{dist\_corr }\OtherTok{\textless{}{-}} \FunctionTok{as.dist}\NormalTok{(}\DecValTok{1} \SpecialCharTok{{-}} \FunctionTok{cor}\NormalTok{(ts\_mat)) }\CommentTok{\#distance correlation. Captures similarity in shape regardless of scale.}
+
+\NormalTok{keywords }\OtherTok{\textless{}{-}} \FunctionTok{colnames}\NormalTok{(ts\_mat)}
+\NormalTok{dist\_dtw }\OtherTok{\textless{}{-}} \FunctionTok{matrix}\NormalTok{(}\DecValTok{0}\NormalTok{, }\FunctionTok{ncol}\NormalTok{(ts\_mat), }\FunctionTok{ncol}\NormalTok{(ts\_mat))}
+\FunctionTok{rownames}\NormalTok{(dist\_dtw) }\OtherTok{\textless{}{-}} \FunctionTok{colnames}\NormalTok{(dist\_dtw) }\OtherTok{\textless{}{-}}\NormalTok{ keywords}
+
+\ControlFlowTok{for}\NormalTok{(i }\ControlFlowTok{in} \DecValTok{1}\SpecialCharTok{:}\FunctionTok{ncol}\NormalTok{(ts\_mat))\{}
+  \ControlFlowTok{for}\NormalTok{(j }\ControlFlowTok{in} \DecValTok{1}\SpecialCharTok{:}\FunctionTok{ncol}\NormalTok{(ts\_mat))\{}
+\NormalTok{    dist\_dtw[i,j] }\OtherTok{\textless{}{-}} \FunctionTok{dtw}\NormalTok{(ts\_mat[,i], ts\_mat[,j])}\SpecialCharTok{$}\NormalTok{distance}
+\NormalTok{  \}}
+\NormalTok{\}}
+
+\NormalTok{dist\_dtw }\OtherTok{\textless{}{-}} \FunctionTok{as.dist}\NormalTok{(dist\_dtw) }\CommentTok{\#dynamic time warping distance}
+
+\NormalTok{dist\_arima }\OtherTok{\textless{}{-}} \FunctionTok{matrix}\NormalTok{(}\DecValTok{0}\NormalTok{, }\FunctionTok{ncol}\NormalTok{(ts\_mat), }\FunctionTok{ncol}\NormalTok{(ts\_mat)) }\CommentTok{\#ARIMA{-}based dissimilarity}
+\FunctionTok{rownames}\NormalTok{(dist\_arima) }\OtherTok{\textless{}{-}} \FunctionTok{colnames}\NormalTok{(dist\_arima) }\OtherTok{\textless{}{-}} \FunctionTok{colnames}\NormalTok{(ts\_mat)}
+
+\ControlFlowTok{for}\NormalTok{(i }\ControlFlowTok{in} \DecValTok{1}\SpecialCharTok{:}\FunctionTok{ncol}\NormalTok{(ts\_mat))\{}
+  \ControlFlowTok{for}\NormalTok{(j }\ControlFlowTok{in} \DecValTok{1}\SpecialCharTok{:}\FunctionTok{ncol}\NormalTok{(ts\_mat))\{}
+\NormalTok{    fit1 }\OtherTok{\textless{}{-}} \FunctionTok{auto.arima}\NormalTok{(ts\_mat[,i])}
+\NormalTok{    fit2 }\OtherTok{\textless{}{-}} \FunctionTok{auto.arima}\NormalTok{(ts\_mat[,j])}
+\NormalTok{    dist\_arima[i,j] }\OtherTok{\textless{}{-}} \FunctionTok{abs}\NormalTok{(fit1}\SpecialCharTok{$}\NormalTok{aic }\SpecialCharTok{{-}}\NormalTok{ fit2}\SpecialCharTok{$}\NormalTok{aic)}
+\NormalTok{  \}}
+\NormalTok{\}}
+
+\NormalTok{dist\_arima }\OtherTok{\textless{}{-}} \FunctionTok{as.dist}\NormalTok{(dist\_arima)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{pheatmap}\NormalTok{(}\FunctionTok{as.matrix}\NormalTok{(dist\_euclid), }\AttributeTok{main =} \StringTok{"Euclidean Distance"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\pandocbounded{\includegraphics[keepaspectratio]{CA4_files/figure-latex/unnamed-chunk-4-1.pdf}}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{pheatmap}\NormalTok{(}\FunctionTok{as.matrix}\NormalTok{(dist\_corr), }\AttributeTok{main =} \StringTok{"Correlation Distance"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\pandocbounded{\includegraphics[keepaspectratio]{CA4_files/figure-latex/unnamed-chunk-5-1.pdf}}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{pheatmap}\NormalTok{(}\FunctionTok{as.matrix}\NormalTok{(dist\_dtw), }\AttributeTok{main =} \StringTok{"DTW Distance"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\pandocbounded{\includegraphics[keepaspectratio]{CA4_files/figure-latex/unnamed-chunk-6-1.pdf}}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{pheatmap}\NormalTok{(}\FunctionTok{as.matrix}\NormalTok{(dist\_arima), }\AttributeTok{main =} \StringTok{"ARIMA Model Distance"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\pandocbounded{\includegraphics[keepaspectratio]{CA4_files/figure-latex/unnamed-chunk-7-1.pdf}}
+All four distance measures reveal the same broad grouping of the series.
+The sports-related keywords (Ice hockey, Ice skate, NHL) consistently
+cluster together, especially under correlation and DTW, reflecting their
+strong shared seasonality. The programming languages (Python, Java,
+TypeScript) also form a tight group across all measures due to their
+smooth, trend-like behavior. The financial terms (Interest rate,
+Regulation, Volatility) appear closer to each other under Euclidean and
+correlation distance but are more separated under DTW and ARIMA
+distance, indicating that while they share low overall magnitude, their
+spikes and temporal dynamics differ. Overall, the measures consistently
+separate the data into seasonal, trend-driven, and event-driven groups.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{library}\NormalTok{(ggplot2)}
+\FunctionTok{library}\NormalTok{(ggdendro)}
+\FunctionTok{library}\NormalTok{(gridExtra)}
+
+\NormalTok{plot\_dend }\OtherTok{\textless{}{-}} \ControlFlowTok{function}\NormalTok{(dist\_matrix, title)\{}
+\NormalTok{  hc }\OtherTok{\textless{}{-}} \FunctionTok{hclust}\NormalTok{(dist\_matrix, }\AttributeTok{method =} \StringTok{"complete"}\NormalTok{)}
+  \FunctionTok{ggdendrogram}\NormalTok{(hc, }\AttributeTok{rotate =} \ConstantTok{TRUE}\NormalTok{, }\AttributeTok{size =} \DecValTok{2}\NormalTok{) }\SpecialCharTok{+}
+    \FunctionTok{ggtitle}\NormalTok{(title) }\SpecialCharTok{+}
+    \FunctionTok{theme\_minimal}\NormalTok{()}
+\NormalTok{\}}
+
+\NormalTok{p1 }\OtherTok{\textless{}{-}} \FunctionTok{plot\_dend}\NormalTok{(dist\_euclid, }\StringTok{"Euclidean Distance"}\NormalTok{)}
+\NormalTok{p2 }\OtherTok{\textless{}{-}} \FunctionTok{plot\_dend}\NormalTok{(dist\_corr, }\StringTok{"Correlation Distance"}\NormalTok{)}
+\NormalTok{p3 }\OtherTok{\textless{}{-}} \FunctionTok{plot\_dend}\NormalTok{(dist\_dtw, }\StringTok{"DTW Distance"}\NormalTok{)}
+\NormalTok{p4 }\OtherTok{\textless{}{-}} \FunctionTok{plot\_dend}\NormalTok{(dist\_arima, }\StringTok{"ARIMA Model Distance"}\NormalTok{)}
+
+\FunctionTok{grid.arrange}\NormalTok{(p1, p2, p3, p4, }\AttributeTok{ncol =} \DecValTok{2}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\pandocbounded{\includegraphics[keepaspectratio]{CA4_files/figure-latex/Exercise 2a}}-1.pdf)
+The four dendograms shows that the clustering structure is highly
+sensetive to the distance metric choice. The only measure that
+clulstrize the topics correctly is actually the correleation
+distance.That might be because correlation captures how similarly two
+time series moves together. And obviously keywords in the same category
+move somewhat similarly. The euclidian distance captures magnitude
+differences. So python and java is high volume searches here, that are
+separated from mid and low volume searches. (Ice Hockey, NHL,
+Regulation, Interest Rate) and (Ice skate, Volatility, TypeScript)
+respectively. DTW distance forms clusters based on shape similarity
+regardless of time alignment, which explains why series with similar
+fluctuation patterns (even if their peaks dont align) are grouped
+together. The ARIMA-based distance groups time series according to the
+underlying model parameters that best describe them (trend, seasonality,
+persistence, and autocorrelation). Unlike Euclidean or correlation
+distance, this metric does not compare the raw series directly, but
+instead compares the statistical structure captured by each fitted ARIMA
+model. As a result, the clusters reflect similarities in the dynamics of
+the series rather than their magnitude or point-wise shape.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{library}\NormalTok{(mclust)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Package 'mclust' version 6.1.2
+## Type 'citation("mclust")' for citing this R package in publications.
+\end{verbatim}
+
+\begin{verbatim}
+## 
+## Attaching package: 'mclust'
+\end{verbatim}
+
+\begin{verbatim}
+## The following object is masked from 'package:dplyr':
+## 
+##     count
+\end{verbatim}
+
+\begin{verbatim}
+## The following object is masked from 'package:purrr':
+## 
+##     map
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# Perform hierarchical clustering}
+\NormalTok{hc\_euclid }\OtherTok{\textless{}{-}} \FunctionTok{hclust}\NormalTok{(dist\_euclid, }\AttributeTok{method =} \StringTok{"complete"}\NormalTok{)}
+\NormalTok{hc\_corr   }\OtherTok{\textless{}{-}} \FunctionTok{hclust}\NormalTok{(dist\_corr,   }\AttributeTok{method =} \StringTok{"complete"}\NormalTok{)}
+\NormalTok{hc\_dtw    }\OtherTok{\textless{}{-}} \FunctionTok{hclust}\NormalTok{(dist\_dtw,    }\AttributeTok{method =} \StringTok{"complete"}\NormalTok{)}
+\NormalTok{hc\_arima  }\OtherTok{\textless{}{-}} \FunctionTok{hclust}\NormalTok{(dist\_arima,  }\AttributeTok{method =} \StringTok{"complete"}\NormalTok{)}
+
+\CommentTok{\# Cut into 3 clusters (sports, programming, finance)}
+\NormalTok{pred\_euclid }\OtherTok{\textless{}{-}} \FunctionTok{cutree}\NormalTok{(hc\_euclid, }\AttributeTok{k =} \DecValTok{3}\NormalTok{)}
+\NormalTok{pred\_corr   }\OtherTok{\textless{}{-}} \FunctionTok{cutree}\NormalTok{(hc\_corr,   }\AttributeTok{k =} \DecValTok{3}\NormalTok{)}
+\NormalTok{pred\_dtw    }\OtherTok{\textless{}{-}} \FunctionTok{cutree}\NormalTok{(hc\_dtw,    }\AttributeTok{k =} \DecValTok{3}\NormalTok{)}
+\NormalTok{pred\_arima  }\OtherTok{\textless{}{-}} \FunctionTok{cutree}\NormalTok{(hc\_arima,  }\AttributeTok{k =} \DecValTok{3}\NormalTok{)}
+
+\CommentTok{\# True labels (make sure order matches your columns)}
+\NormalTok{true\_labels }\OtherTok{\textless{}{-}} \FunctionTok{c}\NormalTok{(}
+  \StringTok{"sports"}\NormalTok{, }\StringTok{"sports"}\NormalTok{, }\StringTok{"sports"}\NormalTok{,       }\CommentTok{\# Ice hockey, Ice skate, NHL}
+  \StringTok{"programming"}\NormalTok{, }\StringTok{"programming"}\NormalTok{, }\StringTok{"programming"}\NormalTok{,   }\CommentTok{\# Python, Java, TypeScript}
+  \StringTok{"finance"}\NormalTok{, }\StringTok{"finance"}\NormalTok{, }\StringTok{"finance"}     \CommentTok{\# Interest rate, Regulation, Volatility}
+\NormalTok{)}
+
+\CommentTok{\# Compute ARI}
+\NormalTok{ari\_euclid }\OtherTok{\textless{}{-}} \FunctionTok{adjustedRandIndex}\NormalTok{(pred\_euclid, true\_labels)}
+\NormalTok{ari\_corr   }\OtherTok{\textless{}{-}} \FunctionTok{adjustedRandIndex}\NormalTok{(pred\_corr,   true\_labels)}
+\NormalTok{ari\_dtw    }\OtherTok{\textless{}{-}} \FunctionTok{adjustedRandIndex}\NormalTok{(pred\_dtw,    true\_labels)}
+\NormalTok{ari\_arima  }\OtherTok{\textless{}{-}} \FunctionTok{adjustedRandIndex}\NormalTok{(pred\_arima,  true\_labels)}
+
+\NormalTok{ari\_euclid; ari\_corr; ari\_dtw; ari\_arima}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] 0.07142857
+\end{verbatim}
+
+\begin{verbatim}
+## [1] 1
+\end{verbatim}
+
+\begin{verbatim}
+## [1] -0.1612903
+\end{verbatim}
+
+\begin{verbatim}
+## [1] -0.03703704
+\end{verbatim}
+
+Correlation distance: ARI = 1.00 This is perfect agreement. Correlation
+distance is the only method that correctly identifies all three
+clusters. This makes sense because it groups series by co-movement
+patterns, which align strongly with topic-driven behavior (e.g., ice
+hockey seasonality, tech trend stability, macro-finance co-movements).
+
+Euclidean distance: ARI ≈ 0.07 Very close to random. Euclidean distance
+is dominated by absolute magnitude, not pattern, causing unrelated
+series with similar scale to cluster together. It completely fails to
+capture the thematic structure of the data.
+
+DTW distance: ARI ≈ --0.16 Worse than random. DTW over-aligns local
+fluctuations, causing series with totally different semantic meaning to
+be matched simply because their wiggles look similar when warped. This
+leads to nonsensical clusters from a topical perspective.
+
+ARIMA model distance: ARI ≈ --0.04 Also worse than random. ARIMA-based
+distance groups series by model dynamics (trend, seasonality,
+autocorrelation), not by topic. Because the Google Trends series vary
+widely in noise level and structure, the resulting clusters do not
+reflect the true categories.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# correlation distance}
+\NormalTok{dist\_corr }\OtherTok{\textless{}{-}} \FunctionTok{as.dist}\NormalTok{(}\DecValTok{1} \SpecialCharTok{{-}} \FunctionTok{cor}\NormalTok{(ts\_mat))}
+
+\CommentTok{\# hierarchical clustering}
+\NormalTok{hc\_corr }\OtherTok{\textless{}{-}} \FunctionTok{hclust}\NormalTok{(dist\_corr, }\AttributeTok{method =} \StringTok{"complete"}\NormalTok{)}
+
+\CommentTok{\# cut into 3 clusters}
+\NormalTok{cluster\_assignments }\OtherTok{\textless{}{-}} \FunctionTok{cutree}\NormalTok{(hc\_corr, }\AttributeTok{k =} \DecValTok{3}\NormalTok{)}
+
+\NormalTok{cluster\_assignments}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##                 Python                   Java             TypeScript 
+##                      1                      1                      1 
+##          Interest rate             Regulation             Volatility 
+##                      2                      2                      2 
+## National Hockey League              Ice skate             Ice hockey 
+##                      3                      3                      3
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{cluster\_df }\OtherTok{\textless{}{-}} \FunctionTok{data.frame}\NormalTok{(}
+  \AttributeTok{keyword =} \FunctionTok{colnames}\NormalTok{(ts\_mat),}
+  \AttributeTok{cluster =} \FunctionTok{factor}\NormalTok{(cluster\_assignments)}
+\NormalTok{)}
+
+\NormalTok{df\_plot }\OtherTok{\textless{}{-}}\NormalTok{ df\_long }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{left\_join}\NormalTok{(cluster\_df, }\AttributeTok{by =} \StringTok{"keyword"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{ggplot}\NormalTok{(df\_plot, }\FunctionTok{aes}\NormalTok{(}\AttributeTok{x =}\NormalTok{ date, }\AttributeTok{y =}\NormalTok{ value, }\AttributeTok{color =}\NormalTok{ cluster)) }\SpecialCharTok{+}
+  \FunctionTok{geom\_line}\NormalTok{() }\SpecialCharTok{+}
+  \FunctionTok{facet\_wrap}\NormalTok{(}\SpecialCharTok{\textasciitilde{}}\NormalTok{ keyword, }\AttributeTok{scales =} \StringTok{"free\_y"}\NormalTok{, }\AttributeTok{ncol =} \DecValTok{3}\NormalTok{) }\SpecialCharTok{+}
+  \FunctionTok{theme\_minimal}\NormalTok{(}\AttributeTok{base\_size =} \DecValTok{13}\NormalTok{) }\SpecialCharTok{+}
+  \FunctionTok{labs}\NormalTok{(}
+    \AttributeTok{title =} \StringTok{"Time Series Clustered Using Correlation Distance"}\NormalTok{,}
+    \AttributeTok{x =} \StringTok{""}\NormalTok{,}
+    \AttributeTok{y =} \StringTok{"Search Interest"}
+\NormalTok{  )}
+\end{Highlighting}
+\end{Shaded}
+
+\pandocbounded{\includegraphics[keepaspectratio]{CA4_files/figure-latex/unnamed-chunk-9-1.pdf}}
+The correlation-based clustering cleanly separates the series into the
+expected three groups. The sports series (Ice hockey, Ice skate, NHL)
+cluster together due to their strong shared seasonality, while the
+programming languages (Python, Java, TypeScript) form a second group
+with similar long-term trends. The financial terms (Interest rate,
+Regulation, Volatility) cluster together as event-driven series with
+irregular spikes. TypeScript is the only borderline case because its
+low, flat pattern is less similar to Python and Java, but it is not
+clearly misclassified. Overall, the clustering matches the true
+structure very well.
+
+Exercise 3 a) The Markov property means the process has no memory: once
+you know the current state anything that happened before becomes useless
+for predicting. Formally, the conditional distribution of the next state
+depends only on the present state, not the whole history.''Given the
+present, the past is irrelevant for predicting the future.''
+
+A simple Markov process can be imagined as a small board game with three
+squares: A, B, and C. At each step you flip a coin to decide whether you
+move left or right, and if you're at an edge you simply bounce back
+because there's nowhere further to go. Your next position depends only
+on your current square and the new coin flip, not on any of the previous
+moves you made. This makes the process Markov: the future is determined
+entirely by the present, with no memory of the past.
+
+The stock market is not a Markov process because future price movements
+depend on far more than just the current price. Past trends, volatility
+regimes, market sentiment, macro announcements, liquidity shocks, and
+structural breaks all influence how prices evolve, and this information
+is not contained in the current price alone. Even if you know today's
+price, you are missing critical context like momentum, volatility
+clustering, and order flow dynamics. Because predicting tomorrow
+requires more than just the present state, the stock market violates the
+Markov property.
+
+Exercise 3 b) The transition matrix A tells you the probabilities of
+jumping from one state to another in a single time step. Each row
+corresponds to the current state, and each entry is the probability that
+the chain moves from state i to j state next period.
+
+The state distribution vector π(t) tells you the probabilities of being
+in each state at time t.
+
+Exercise 3 c) The steady state vector π∗ represents the long-run
+distribution of the Markov chain: the probabilities of being in each
+state after the system has run for a long time and settled into
+equilibrium.
+
+Property 1 means π∗ is unchanged by the transition dynamics. If the
+chain is already in distribution π∗, one more step does nothing. It's a
+fixed point of the Markov evolution. This ensures stationarity.
+
+Property 2 means the probabilities sums to 1. This ensures probability
+distribution.
+
+Property 3 means that each component must be non-negative, because
+probabilities can't be negative.
+
+Exercise 3 d) Emission matrix \(B\) tells you how the hidden state
+\(X_t\) produces the observable output \(Y_t\). Each entry \[
+B_{ij} = \Pr(Y_t = j \mid X_t = i)
+\] is the probability that the system emits observation \(j\) when it is
+in hidden state \(i\). In other words, \(A\) governs how the hidden
+state evolves, while \(B\) governs how the hidden state reveals itself
+to you.
+
+Marginal distribution vector gives the overall probabilities of
+observing each possible value of \(Y_t\) at time \(t\), after accounting
+for all the ways you might get those observations from the hidden
+states.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{library}\NormalTok{(HiddenMarkov)}
+\FunctionTok{library}\NormalTok{(tidyverse)}
+\FunctionTok{library}\NormalTok{(HiddenMarkov)}
+\FunctionTok{library}\NormalTok{(patchwork)}
+
+\NormalTok{kw1 }\OtherTok{\textless{}{-}} \StringTok{"National Hockey League"}
+\NormalTok{kw2 }\OtherTok{\textless{}{-}} \StringTok{"Interest rate"}
+\NormalTok{kw3 }\OtherTok{\textless{}{-}} \StringTok{"Python"}
+
+\CommentTok{\#fit + plot one hmm}
+\NormalTok{fit\_and\_plot\_hmm }\OtherTok{\textless{}{-}} \ControlFlowTok{function}\NormalTok{(df\_k) \{}
+\NormalTok{  df\_k }\OtherTok{\textless{}{-}}\NormalTok{ df\_k }\SpecialCharTok{\%\textgreater{}\%} \FunctionTok{arrange}\NormalTok{(date)}
+\NormalTok{  x }\OtherTok{\textless{}{-}}\NormalTok{ df\_k}\SpecialCharTok{$}\NormalTok{value}
+  
+  \CommentTok{\# Build model}
+\NormalTok{  model }\OtherTok{\textless{}{-}} \FunctionTok{dthmm}\NormalTok{(}
+    \AttributeTok{x      =}\NormalTok{ x,}
+    \AttributeTok{Pi     =} \FunctionTok{matrix}\NormalTok{(}\FunctionTok{c}\NormalTok{(}\FloatTok{0.9}\NormalTok{,}\FloatTok{0.1}\NormalTok{,}
+                      \FloatTok{0.1}\NormalTok{,}\FloatTok{0.9}\NormalTok{), }\AttributeTok{nrow =} \DecValTok{2}\NormalTok{),}
+    \AttributeTok{delta  =} \FunctionTok{c}\NormalTok{(}\FloatTok{0.5}\NormalTok{, }\FloatTok{0.5}\NormalTok{),}
+    \AttributeTok{distn  =} \StringTok{"norm"}\NormalTok{,}
+    \AttributeTok{pm     =} \FunctionTok{list}\NormalTok{(}
+      \AttributeTok{mean =} \FunctionTok{c}\NormalTok{(}\FunctionTok{mean}\NormalTok{(x) }\SpecialCharTok{{-}} \FunctionTok{sd}\NormalTok{(x), }\FunctionTok{mean}\NormalTok{(x) }\SpecialCharTok{+} \FunctionTok{sd}\NormalTok{(x)),}
+      \AttributeTok{sd   =} \FunctionTok{c}\NormalTok{(}\FunctionTok{sd}\NormalTok{(x), }\FunctionTok{sd}\NormalTok{(x))}
+\NormalTok{    )}
+\NormalTok{  )}
+  
+  \CommentTok{\# Fit with Baum–Welch}
+\NormalTok{    tmp }\OtherTok{\textless{}{-}} \FunctionTok{capture.output}\NormalTok{( }\CommentTok{\#remove the noisy console output for better pdf readability}
+\NormalTok{      fit }\OtherTok{\textless{}{-}} \FunctionTok{BaumWelch}\NormalTok{(model)}
+\NormalTok{  )}
+
+  
+  \CommentTok{\# Decode most likely states}
+\NormalTok{  states }\OtherTok{\textless{}{-}} \FunctionTok{Viterbi}\NormalTok{(fit)}
+\NormalTok{  df\_k}\SpecialCharTok{$}\NormalTok{state }\OtherTok{\textless{}{-}} \FunctionTok{factor}\NormalTok{(states)}
+  
+  \CommentTok{\# Plot}
+  \FunctionTok{ggplot}\NormalTok{(df\_k, }\FunctionTok{aes}\NormalTok{(date, value, }\AttributeTok{color =}\NormalTok{ state)) }\SpecialCharTok{+}
+    \FunctionTok{geom\_line}\NormalTok{(}\AttributeTok{size =} \DecValTok{1}\NormalTok{) }\SpecialCharTok{+}
+    \FunctionTok{theme\_minimal}\NormalTok{() }\SpecialCharTok{+}
+    \FunctionTok{labs}\NormalTok{(}
+      \AttributeTok{title =} \FunctionTok{paste}\NormalTok{(}\StringTok{"HMM (2 states) for"}\NormalTok{, df\_k}\SpecialCharTok{$}\NormalTok{keyword[}\DecValTok{1}\NormalTok{]),}
+      \AttributeTok{x =} \StringTok{"Date"}\NormalTok{,}
+      \AttributeTok{y =} \StringTok{"Value"}\NormalTok{,}
+      \AttributeTok{color =} \StringTok{"State"}
+\NormalTok{    )}
+\NormalTok{\}}
+
+
+\CommentTok{\#fit and plot}
+\NormalTok{df\_NHL }\OtherTok{\textless{}{-}}\NormalTok{ df\_long }\SpecialCharTok{\%\textgreater{}\%} \FunctionTok{filter}\NormalTok{(keyword }\SpecialCharTok{==}\NormalTok{ kw1)}
+\NormalTok{p1 }\OtherTok{\textless{}{-}} \FunctionTok{fit\_and\_plot\_hmm}\NormalTok{(df\_NHL)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Warning: Using `size` aesthetic for lines was deprecated in ggplot2 3.4.0.
+## i Please use `linewidth` instead.
+## This warning is displayed once every 8 hours.
+## Call `lifecycle::last_lifecycle_warnings()` to see where this warning was
+## generated.
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{df\_IR }\OtherTok{\textless{}{-}}\NormalTok{ df\_long }\SpecialCharTok{\%\textgreater{}\%} \FunctionTok{filter}\NormalTok{(keyword }\SpecialCharTok{==}\NormalTok{ kw2)}
+\NormalTok{p2 }\OtherTok{\textless{}{-}} \FunctionTok{fit\_and\_plot\_hmm}\NormalTok{(df\_IR)}
+
+\NormalTok{df\_Python }\OtherTok{\textless{}{-}}\NormalTok{ df\_long }\SpecialCharTok{\%\textgreater{}\%} \FunctionTok{filter}\NormalTok{(keyword }\SpecialCharTok{==}\NormalTok{ kw3)}
+\NormalTok{p3 }\OtherTok{\textless{}{-}} \FunctionTok{fit\_and\_plot\_hmm}\NormalTok{(df\_Python)}
+
+\CommentTok{\# Show plots}
+\NormalTok{combined }\OtherTok{\textless{}{-}}\NormalTok{ p1 }\SpecialCharTok{/}\NormalTok{ p2 }\SpecialCharTok{/}\NormalTok{ p3}
+\NormalTok{combined}
+\end{Highlighting}
+\end{Shaded}
+
+\pandocbounded{\includegraphics[keepaspectratio]{CA4_files/figure-latex/Exercise 3 e}}-1.pdf)
+The two--state HMM divides each time series into a ``low-activity'' and
+a ``high-activity'' regime, based purely on the level and variability of
+the observations. Because the model is constrained to use two states, it
+will always produce such a segmentation, so the regimes should be
+interpreted as simple statistical clusters rather than deep structural
+patterns. For the purposes of this assignment, however, the results
+appropriately illustrate how HMMs identify and visualize changes in
+underlying behavior over time.
+
+Exercise 4a) Using Euler's identity,
+\(e^{i\omega t} = \cos(\omega t) + i\sin(\omega t)\), so the real part
+is cos(ωt), the imaginary part is sin(ωt), and the magnitude is
+\(|e^{i\omega t}| = 1\).
+
+For r\textgreater0, the expression
+\(r e^{i\omega t} = r\cos(\omega t) + i\,r\sin(\omega t)\) represents a
+rotating vector of constant length r in the complex plane. Its real and
+imaginary components are rcos(ωt) and rsin(ωt), and its magnitude is
+\(|r e^{i\omega t}| = r\)
+
+Exercise 4 b) X(ω) describes how the signal's energy is distributed
+across frequencies. If X(ω) is large around ω=0, then x(t) contains a
+strong low-frequency or constant component, meaning it varies slowly or
+has a large average value.
+
+Exercise 4 c) \#\#\# Determining the Frequencies from the Fourier
+Transform
+
+The signal is given by\\
+\[
+x(t) = \sin(\omega_1 t) + 2\sin(\omega_2 t) + 4\sin(\omega_3 t),
+\] and the magnitude of its Fourier transform \(|X(\omega)|\) is shown
+in the figure.
+
+The Fourier transform of a sum of sinusoids produces peaks at the
+corresponding positive and negative frequencies. In the plot of
+\(|X(\omega)|\), we observe clear peaks at\\
+\[
+\omega \approx 2,\qquad \omega \approx 4,\qquad \omega \approx 7,
+\] and the relative peak heights match the amplitudes of the components
+in \(x(t)\):\\
+the smallest peak corresponds to amplitude \(1\), the intermediate peak
+to amplitude \(2\), and the tallest peak to amplitude \(4\).
+
+Therefore, the correct frequencies are\\
+\[
+\omega_1 = 2,\qquad \omega_2 = 4,\qquad \omega_3 = 7.
+\]
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{library}\NormalTok{(tidyverse)}
+
+\CommentTok{\#function to compute FFT magnitude }
+\NormalTok{compute\_fft }\OtherTok{\textless{}{-}} \ControlFlowTok{function}\NormalTok{(x) \{}
+\NormalTok{  N }\OtherTok{\textless{}{-}} \FunctionTok{length}\NormalTok{(x)}
+\NormalTok{  F }\OtherTok{\textless{}{-}} \FunctionTok{fft}\NormalTok{(x)                }\CommentTok{\# complex FFT result}
+\NormalTok{  mag }\OtherTok{\textless{}{-}} \FunctionTok{Mod}\NormalTok{(F) }\SpecialCharTok{/}\NormalTok{ N          }\CommentTok{\# magnitude spectrum}
+  \FunctionTok{tibble}\NormalTok{(}\AttributeTok{freq =} \DecValTok{0}\SpecialCharTok{:}\NormalTok{(N}\DecValTok{{-}1}\NormalTok{), }\AttributeTok{mag =}\NormalTok{ mag)}
+\NormalTok{\}}
+
+\CommentTok{\# Compute FFT for each time series}
+\NormalTok{fft\_nhl }\OtherTok{\textless{}{-}} \FunctionTok{compute\_fft}\NormalTok{(df\_NHL}\SpecialCharTok{$}\NormalTok{value)}
+\NormalTok{fft\_ir  }\OtherTok{\textless{}{-}} \FunctionTok{compute\_fft}\NormalTok{(df\_IR}\SpecialCharTok{$}\NormalTok{value)}
+\NormalTok{fft\_py  }\OtherTok{\textless{}{-}} \FunctionTok{compute\_fft}\NormalTok{(df\_IR}\SpecialCharTok{$}\NormalTok{value)}
+
+\CommentTok{\# {-}{-}{-} Plot function {-}{-}{-}}
+\NormalTok{plot\_fft }\OtherTok{\textless{}{-}} \ControlFlowTok{function}\NormalTok{(df\_fft, title\_label) \{}
+  \FunctionTok{ggplot}\NormalTok{(df\_fft, }\FunctionTok{aes}\NormalTok{(freq, mag)) }\SpecialCharTok{+}
+    \FunctionTok{geom\_line}\NormalTok{(}\AttributeTok{color =} \StringTok{"steelblue"}\NormalTok{, }\AttributeTok{linewidth =} \FloatTok{0.8}\NormalTok{) }\SpecialCharTok{+}
+    \FunctionTok{theme\_minimal}\NormalTok{() }\SpecialCharTok{+}
+    \FunctionTok{labs}\NormalTok{(}
+      \AttributeTok{title =} \FunctionTok{paste}\NormalTok{(}\StringTok{"FFT Magnitude for"}\NormalTok{, title\_label),}
+      \AttributeTok{x =} \StringTok{"Frequency Index"}\NormalTok{,}
+      \AttributeTok{y =} \StringTok{"|X(ω)|"}
+\NormalTok{    )}
+\NormalTok{\}}
+
+\CommentTok{\# Produce the plots}
+\NormalTok{p\_fft\_nhl }\OtherTok{\textless{}{-}} \FunctionTok{plot\_fft}\NormalTok{(fft\_nhl, }\StringTok{"NHL"}\NormalTok{)}
+\NormalTok{p\_fft\_ir  }\OtherTok{\textless{}{-}} \FunctionTok{plot\_fft}\NormalTok{(fft\_ir, }\StringTok{"Interest rate"}\NormalTok{)}
+\NormalTok{p\_fft\_py  }\OtherTok{\textless{}{-}} \FunctionTok{plot\_fft}\NormalTok{(fft\_py, }\StringTok{"Python"}\NormalTok{)}
+
+\NormalTok{(p\_fft\_nhl }\SpecialCharTok{/}\NormalTok{ p\_fft\_ir }\SpecialCharTok{/}\NormalTok{ p\_fft\_py)}
+\end{Highlighting}
+\end{Shaded}
+
+\pandocbounded{\includegraphics[keepaspectratio]{CA4_files/figure-latex/Exercise 4d}}-1.pdf)
+The FFT magnitude spectra show a dominant peak at frequency index 0 for
+all three time series, indicating a strong DC component and slow overall
+variation. The ``Interest rate'' and ``Python'' series exhibit flat,
+low-magnitude spectra beyond the DC peak, suggesting they contain no
+strong repeating or periodic structure. In contrast, the ``NHL'' series
+shows additional low-frequency peaks, reflecting weak periodic patterns
+consistent with seasonal or event-driven fluctuations.
+
+\end{document}
